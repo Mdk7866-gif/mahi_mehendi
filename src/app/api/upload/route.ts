@@ -79,6 +79,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       uploadRecord && typeof uploadRecord['secure_url'] === 'string'
         ? uploadRecord['secure_url']
         : null;
+    const publicId =
+      uploadRecord && typeof uploadRecord['public_id'] === 'string'
+        ? uploadRecord['public_id']
+        : null;
 
     if (!secureUrl) {
       console.error('Cloudinary returned unexpected result:', uploadResult);
@@ -93,6 +97,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       url: secureUrl,
       category: category as 'normal' | 'bridal',
       price: priceNum,
+      publicId: publicId ?? undefined,
     });
     await newImage.save();
     console.log('Image saved to MongoDB successfully:', newImage._id);
@@ -105,6 +110,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           url: newImage.url,
           category: newImage.category,
           price: newImage.price,
+          publicId: newImage.publicId,
         },
       },
       { status: 201 }
