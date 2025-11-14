@@ -22,6 +22,10 @@ export default function Admin(): React.ReactElement {
   const [editData, setEditData] = useState<{ category: Category; price: string }>({ category: 'normal', price: '' });
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
+  // confirmation modal state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     fetch('/api/images')
       .then((res) => res.json())
@@ -62,15 +66,31 @@ export default function Admin(): React.ReactElement {
     }
   };
 
-  const deleteImage = async (id: string) => {
-    const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
-    const result = await res.json();
-    if (res.ok) {
-      setImages((prev) => prev.filter((p) => p._id !== id));
-      setMessage('Deleted successfully');
-    } else {
-      setMessage(result?.error || 'Delete failed');
+  // call this when Delete is confirmed in modal
+  const performDelete = async (id: string) => {
+    setDeleting(true);
+    setMessage('');
+    try {
+      const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (res.ok) {
+        setImages((prev) => prev.filter((p) => p._id !== id));
+        setMessage('Deleted successfully');
+      } else {
+        setMessage(result?.error || 'Delete failed');
+      }
+    } catch (err) {
+      if (err instanceof Error) setMessage(err.message);
+      else setMessage('Error deleting image');
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
     }
+  };
+
+  // open confirmation modal
+  const confirmDelete = (id: string) => {
+    setConfirmDeleteId(id);
   };
 
   const handleAuth = () => {
@@ -303,6 +323,7 @@ export default function Admin(): React.ReactElement {
                       type="number"
                       value={editData.price}
                       onChange={(e) => setEditData({ ...editData, price: (e.target as HTMLInputElement).value })}
+
                       min="0"
                       step="0.01"
                       className="w-full p-2 border-2 border-[#8D6E63]/30 rounded-md focus:border-[#6D4C41]"
@@ -325,11 +346,41 @@ export default function Admin(): React.ReactElement {
               ) : (
                 <div className="p-3 sm:p-4 flex items-center justify-end gap-3 bg-white border-t border-[#8D6E63]/20">
                   <button onClick={() => startEdit(img)} className="px-3 py-1.5 bg-[#6D4C41] text-white rounded-md text-sm hover:bg-[#3D2817]">Edit</button>
-                  <button onClick={() => deleteImage(img._id)} className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">Delete</button>
+                  <button onClick={() => confirmDelete(img._id)} className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">Delete</button>
                 </div>
               )}
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border border-[#8D6E63]/20"
+          >
+            <h3 className="text-lg font-semibold text-[#3D2817] mb-3">Confirm delete</h3>
+            <p className="text-sm text-[#6D4C41] mb-6">Are you sure you want to delete this image? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deleting}
+                className="px-4 py-2 bg-gray-100 text-[#3D2817] rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmDeleteId && performDelete(confirmDeleteId)}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Yes, delete'}
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
 
