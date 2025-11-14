@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 
 export default function Footer(): React.ReactElement {
   return (
@@ -37,11 +38,11 @@ export default function Footer(): React.ReactElement {
           <div>
             <h4 className="text-[#3D2817] font-semibold text-sm mb-2">Quick links</h4>
             <ul className="space-y-1">
-              <li><a href="/" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Home</a></li>
-              <li><a href="/gallery" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Gallery</a></li>
-              <li><a href="/services" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Services</a></li>
-              <li><a href="/about" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">About</a></li>
-              <li><a href="/contact" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Contact</a></li>
+              <li><Link href="/" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Home</Link></li>
+              <li><Link href="/gallery" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Gallery</Link></li>
+              <li><Link href="/services" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Services</Link></li>
+              <li><Link href="/about" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">About</Link></li>
+              <li><Link href="/contact" className="text-[#6D4C41] text-xs sm:text-sm hover:text-[#3D2817]">Contact</Link></li>
             </ul>
           </div>
 
@@ -117,7 +118,7 @@ export default function Footer(): React.ReactElement {
         <div className="mt-6 pt-4 border-t border-[#8D6E63]/20 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm text-[#6D4C41]">
           <span>© {new Date().getFullYear()} Mahi Mehendi</span>
           <span className="hidden sm:inline">— Crafted with love and artistry</span>
-          <a href="/privacy" className="underline hover:text-[#3D2817]">Privacy</a>
+          <Link href="/privacy" className="underline hover:text-[#3D2817]">Privacy</Link>
         </div>
       </div>
     </footer>

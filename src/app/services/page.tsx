@@ -9,7 +9,6 @@ type Service = {
   subtitle?: string;
   description: string;
   starting?: string;
-  icon?: React.ReactNode;
 };
 
 type Course = {
@@ -86,7 +85,96 @@ const COURSES: Course[] = [
   },
 ];
 
-export default function Services() {
+const cardAnim = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } };
+
+function ServiceCard({ s }: { s: Service }) {
+  return (
+    <motion.article
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.15 }}
+      variants={{ hidden: cardAnim.hidden, show: cardAnim.show }}
+      transition={{ duration: 0.32 }}
+      className="bg-white rounded-xl p-5 shadow-sm border border-[#8D6E63]/10 hover:shadow-lg transition-shadow"
+      aria-labelledby={`service-${s.id}`}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FFF8F0] border border-[#8D6E63]/20 flex items-center justify-center text-xl font-bold text-[#6D4C41]"
+          aria-hidden
+        >
+          {s.title.split(' ')[0].charAt(0)}
+        </div>
+        <div className="flex-1">
+          <h3 id={`service-${s.id}`} className="text-lg font-semibold text-[#3D2817]">
+            {s.title}
+          </h3>
+          {s.subtitle && <p className="text-sm text-[#6D4C41] mt-1">{s.subtitle}</p>}
+          <p className="text-sm text-[#6D4C41] mt-3">{s.description}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-[#3D2817] font-bold">{s.starting}</div>
+        <Link href="/contact" className="ml-3">
+          <button className="text-sm bg-[#6D4C41] text-white py-1.5 px-3 rounded-full font-semibold hover:bg-[#3D2817] transition-colors">
+            Book Now
+          </button>
+        </Link>
+      </div>
+    </motion.article>
+  );
+}
+
+function CourseCard({ c }: { c: Course }) {
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.15 }}
+      variants={{ hidden: cardAnim.hidden, show: cardAnim.show }}
+      transition={{ duration: 0.32 }}
+      className="bg-white rounded-xl p-5 border border-[#8D6E63]/10 shadow-sm"
+      role="region"
+      aria-labelledby={`course-${c.id}`}
+    >
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 id={`course-${c.id}`} className="text-lg font-semibold text-[#3D2817]">
+            {c.title}
+          </h3>
+          <div className="text-sm text-[#6D4C41] mt-1">
+            <span>{c.duration}</span>
+            {c.priceRange && <span className="ml-3">• {c.priceRange}</span>}
+          </div>
+        </div>
+
+        <div className="text-sm text-[#3D2817] font-semibold">Certificate</div>
+      </div>
+
+      <ul className="mt-3 space-y-2 text-[#6D4C41] list-disc list-inside">
+        {c.highlights.map((h) => (
+          <li key={h}>{h}</li>
+        ))}
+      </ul>
+
+      <div className="mt-4 flex gap-3">
+        <Link href="/contact">
+          <button className="py-2 px-4 bg-[#6D4C41] text-white rounded-md font-semibold hover:bg-[#3D2817]">
+            Enroll Now
+          </button>
+        </Link>
+        <Link href="/contact">
+          <button className="py-2 px-4 border border-[#6D4C41] text-[#6D4C41] rounded-md font-semibold">
+            Ask a Question
+          </button>
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function ServicesPage() {
   return (
     <div className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto w-full">
       {/* HERO */}
@@ -103,19 +191,13 @@ export default function Services() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/gallery" className="inline-block">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  className="py-2 px-5 bg-[#6D4C41] text-white rounded-full font-semibold shadow-lg"
-                >
+                <motion.button whileHover={{ scale: 1.02 }} className="py-2 px-5 bg-[#6D4C41] text-white rounded-full font-semibold shadow-lg">
                   Explore Gallery
                 </motion.button>
               </Link>
 
               <Link href="/contact" className="inline-block">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  className="py-2 px-5 border-2 border-[#6D4C41] text-[#6D4C41] rounded-full font-semibold"
-                >
+                <motion.button whileHover={{ scale: 1.02 }} className="py-2 px-5 border-2 border-[#6D4C41] text-[#6D4C41] rounded-full font-semibold">
                   Book a Service / Enroll
                 </motion.button>
               </Link>
@@ -123,7 +205,6 @@ export default function Services() {
           </div>
 
           <div className="flex justify-center md:justify-end">
-            {/* Optional decorative element that echoes the UI from your screenshot */}
             <div className="w-full max-w-md p-6 rounded-xl bg-white shadow-lg border border-[#8D6E63]/10">
               <div className="text-center">
                 <p className="text-sm text-[#6D4C41]">Featured</p>
@@ -148,39 +229,12 @@ export default function Services() {
       <section className="mt-10">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#3D2817] mb-4">Our Mehendi Services</h2>
         <p className="text-[#6D4C41] mb-6 max-w-2xl">
-          We travel for events and provide on-site application. Every design is customized for the occasion —
-          bridal, engagement, baby shower and everyday mehendi.
+          We travel for events and provide on-site application. Every design is customized for the occasion — bridal, engagement, baby shower and everyday mehendi.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {SERVICES.map((s) => (
-            <motion.article
-              key={s.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.05 }}
-              className="bg-white rounded-xl p-5 shadow-sm border border-[#8D6E63]/10 hover:shadow-lg transition-shadow cursor-default"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FFF8F0] border border-[#8D6E63]/20 flex items-center justify-center text-xl font-bold text-[#6D4C41]">
-                  {s.title.split(' ')[0].charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#3D2817]">{s.title}</h3>
-                  {s.subtitle && <p className="text-sm text-[#6D4C41] mt-1">{s.subtitle}</p>}
-                  <p className="text-sm text-[#6D4C41] mt-3">{s.description}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-sm text-[#3D2817] font-bold">{s.starting}</div>
-                <Link href="/contact" className="ml-3">
-                  <button className="text-sm bg-[#6D4C41] text-white py-1.5 px-3 rounded-full font-semibold hover:bg-[#3D2817] transition-colors">
-                    Book Now
-                  </button>
-                </Link>
-              </div>
-            </motion.article>
+            <ServiceCard key={s.id} s={s} />
           ))}
         </div>
       </section>
@@ -189,50 +243,12 @@ export default function Services() {
       <section className="mt-14">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#3D2817] mb-4">Mehendi Courses (Hands-on)</h2>
         <p className="text-[#6D4C41] mb-6 max-w-2xl">
-          Practical, small-group classes — we teach everything from making perfect cones to advanced bridal sets.
-          Certificates provided on successful completion.
+          Practical, small-group classes — we teach everything from making perfect cones to advanced bridal sets. Certificates provided on successful completion.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {COURSES.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl p-5 border border-[#8D6E63]/10 shadow-sm"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#3D2817]">{c.title}</h3>
-                  <div className="text-sm text-[#6D4C41] mt-1">
-                    <span>{c.duration}</span>
-                    {c.priceRange && <span className="ml-3">• {c.priceRange}</span>}
-                  </div>
-                </div>
-
-                <div className="text-sm text-[#3D2817] font-semibold">Certificate</div>
-              </div>
-
-              <ul className="mt-3 space-y-2 text-[#6D4C41] list-disc list-inside">
-                {c.highlights.map((h) => (
-                  <li key={h}>{h}</li>
-                ))}
-              </ul>
-
-              <div className="mt-4 flex gap-3">
-                <Link href="/contact">
-                  <button className="py-2 px-4 bg-[#6D4C41] text-white rounded-md font-semibold hover:bg-[#3D2817]">
-                    Enroll Now
-                  </button>
-                </Link>
-                <Link href="/contact">
-                  <button className="py-2 px-4 border border-[#6D4C41] text-[#6D4C41] rounded-md font-semibold">
-                    Ask a Question
-                  </button>
-                </Link>
-              </div>
-            </motion.div>
+            <CourseCard key={c.id} c={c} />
           ))}
         </div>
       </section>
