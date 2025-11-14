@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,7 +16,29 @@ interface GalleryCardPopUpProps {
 }
 
 export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCardPopUpProps) {
+  // Zoom & pan state
   const [isZoomed, setIsZoomed] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+
+  // Refs for gesture math
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lastTouchDistance = useRef<number | null>(null);
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
+  const lastPan = useRef<{ x: number; y: number } | null>(null);
+  const isPanning = useRef(false);
+  const lastClick = useRef<number>(0);
+
+  // Limits
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 3;
+
+  // Reset zoom/pan when image changes or modal closed
+  useEffect(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+    setIsZoomed(false);
+  }, [selectedImage]);
 
   // Close modal on ESC key
   useEffect(() => {
@@ -28,30 +50,218 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
 
     if (selectedImage) {
       document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     }
-
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
   }, [selectedImage, onClose]);
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only close if clicking the backdrop, not the content
-    if (e.target === e.currentTarget) {
-      onClose();
+  // Helpers: distance & center between two touches
+  const getTouchDistance = (t1: Touch, t2: Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.hypot(dx, dy);
+  };
+  const getTouchCenter = (t1: Touch, t2: Touch) => {
+    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+  };
+
+  // Clamp translate so user can't pan the image far outside viewport (basic bounds)
+  const clampTranslate = (tx: number, ty: number, currentScale = scale) => {
+    const container = containerRef.current;
+    if (!container) return { x: tx, y: ty };
+
+    // container visible area
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+
+    // When image is scaled, the effective content is scale * cw (since Image uses object-contain, it's approximate)
+    // We allow some leeway but clamp roughly to prevent losing image completely.
+    const maxX = Math.max(0, (currentScale - 1) * cw / 2 + 40);
+    const maxY = Math.max(0, (currentScale - 1) * ch / 2 + 40);
+
+    return {
+      x: Math.max(-maxX, Math.min(maxX, tx)),
+      y: Math.max(-maxY, Math.min(maxY, ty)),
+    };
+  };
+
+  // Touch handlers (mobile)
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // start pinch
+      const d = getTouchDistance(e.touches[0], e.touches[1]);
+      lastTouchDistance.current = d;
+      lastTouchCenter.current = getTouchCenter(e.touches[0], e.touches[1]);
+    } else if (e.touches.length === 1) {
+      // start pan
+      isPanning.current = true;
+      lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && lastTouchDistance.current != null && lastTouchCenter.current) {
+      const newD = getTouchDistance(e.touches[0], e.touches[1]);
+      const newCenter = getTouchCenter(e.touches[0], e.touches[1]);
+
+      // scale change ratio
+      const ratio = newD / lastTouchDistance.current;
+      let nextScale = scale * ratio;
+      nextScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, nextScale));
+
+      // Calculate how translate should change so zoom focuses around pinch center
+      const container = containerRef.current;
+      if (container) {
+        // container rect
+        const rect = container.getBoundingClientRect();
+        const originX = newCenter.x - rect.left;
+        const originY = newCenter.y - rect.top;
+
+        // transform origin effect: newTranslate = origin + (oldTranslate - origin) * (newScale/oldScale)
+        const oldScale = scale;
+        const oldTranslate = translate;
+        const newTranslateX = originX + (oldTranslate.x - originX) * (nextScale / oldScale);
+        const newTranslateY = originY + (oldTranslate.y - originY) * (nextScale / oldScale);
+
+        const clamped = clampTranslate(newTranslateX, newTranslateY, nextScale);
+        setTranslate(clamped);
+      }
+
+      setScale(nextScale);
+      setIsZoomed(nextScale > 1);
+
+      // update refs
+      lastTouchDistance.current = newD;
+      lastTouchCenter.current = newCenter;
+    } else if (e.touches.length === 1 && isPanning.current && lastPan.current) {
+      const t = e.touches[0];
+      const dx = t.clientX - lastPan.current.x;
+      const dy = t.clientY - lastPan.current.y;
+
+      const next = clampTranslate(translate.x + dx, translate.y + dy);
+      setTranslate(next);
+      lastPan.current = { x: t.clientX, y: t.clientY };
+    }
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      lastTouchDistance.current = null;
+      lastTouchCenter.current = null;
+    }
+    if (e.touches.length === 0) {
+      isPanning.current = false;
+      lastPan.current = null;
+    }
+  };
+
+  // Mouse handlers (desktop)
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // only left click
+    isPanning.current = true;
+    lastPan.current = { x: e.clientX, y: e.clientY };
+    (e.target as HTMLElement).style.cursor = 'grabbing';
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isPanning.current || !lastPan.current) return;
+    const dx = e.clientX - lastPan.current.x;
+    const dy = e.clientY - lastPan.current.y;
+    const next = clampTranslate(translate.x + dx, translate.y + dy);
+    setTranslate(next);
+    lastPan.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const onMouseUp = (e: React.MouseEvent) => {
+    isPanning.current = false;
+    lastPan.current = null;
+    (e.target as HTMLElement).style.cursor = 'auto';
+  };
+
+  // Wheel zoom (desktop)
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const zoomFactor = delta > 0 ? 1.08 : 0.92;
+    let nextScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * zoomFactor));
+
+    // Zoom around cursor
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+
+      const oldScale = scale;
+      const newTranslateX = cursorX + (translate.x - cursorX) * (nextScale / oldScale);
+      const newTranslateY = cursorY + (translate.y - cursorY) * (nextScale / oldScale);
+
+      const clamped = clampTranslate(newTranslateX, newTranslateY, nextScale);
+      setTranslate(clamped);
+    }
+
+    setScale(nextScale);
+    setIsZoomed(nextScale > 1);
+  };
+
+  // Double-tap/double-click to toggle zoom
+  const onDouble = (clientX?: number, clientY?: number) => {
+    const now = Date.now();
+    if (now - lastClick.current < 300) {
+      // double (fast) => toggle
+      const nextScale = scale > 1 ? 1 : 2; // toggle between 1 and 2
+      if (clientX != null && clientY != null && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const originX = clientX - rect.left;
+        const originY = clientY - rect.top;
+        const oldScale = scale || 1;
+
+        const newTranslateX = originX + (translate.x - originX) * (nextScale / oldScale);
+        const newTranslateY = originY + (translate.y - originY) * (nextScale / oldScale);
+
+        setTranslate(clampTranslate(newTranslateX, newTranslateY, nextScale));
+      } else {
+        setTranslate({ x: 0, y: 0 });
+      }
+      setScale(nextScale);
+      setIsZoomed(nextScale > 1);
+    }
+    lastClick.current = now;
+  };
+
+  // Handlers bound to container for click/touch/mouse
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // Prevent click closing when interacting; double click handled here
+    onDouble(e.clientX, e.clientY);
+  };
+
   const handleImageClick = () => {
-    setIsZoomed(!isZoomed);
+    // If not zoomed, single tap toggles small zoom (like your prior behaviour)
+    const nextScale = scale > 1 ? 1 : 1.5;
+    setScale(nextScale);
+    setIsZoomed(nextScale > 1);
+    setTranslate({ x: 0, y: 0 });
   };
 
   const handleCloseZoom = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
     setIsZoomed(false);
   };
+
+  // Prevent right-click drag selecting text etc.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const prevent = (e: Event) => e.preventDefault();
+    container.addEventListener('dragstart', prevent);
+    return () => container.removeEventListener('dragstart', prevent);
+  }, []);
+
+  if (!selectedImage) return null;
 
   return (
     <AnimatePresence>
@@ -63,7 +273,10 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
-          onClick={handleBackdropClick}
+          onClick={(e) => {
+            // close when clicking backdrop only
+            if (e.target === e.currentTarget) onClose();
+          }}
         >
           <motion.div
             key="modal-content"
@@ -75,23 +288,42 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
             onClick={(e) => e.stopPropagation()}
           >
             {/* Image Container */}
-            <div 
-              className={`relative w-full h-[85vh] sm:h-[90vh] flex items-center justify-center bg-[#FFF8F0] cursor-zoom-in ${isZoomed ? 'overflow-auto' : ''}`}
-              onClick={handleImageClick}
+            <div
+              ref={containerRef}
+              className={`relative w-full h-[85vh] sm:h-[90vh] flex items-center justify-center bg-[#FFF8F0] ${isZoomed ? 'overflow-auto touch-pan-y' : ''}`}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onMouseDown={onMouseDown}
+              onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp}
+              onMouseLeave={() => {
+                isPanning.current = false;
+                lastPan.current = null;
+              }}
+              onWheel={onWheel}
+              onClick={handleContainerClick}
+              style={{ touchAction: isZoomed ? 'none' : 'manipulation' }} // allow gestures when zoomed
             >
               <motion.div
-                animate={{ scale: isZoomed ? 1.5 : 1 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="relative w-full h-full flex items-center justify-center"
+                // apply transform based on scale & translate
+                style={{
+                  transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                  transition: 'transform 0.05s linear',
+                  willChange: 'transform',
+                }}
+                onDoubleClick={() => onDouble()}
               >
                 <Image
                   src={selectedImage.url}
                   alt="Mehendi Design Full View"
                   fill
-                  className={`object-contain p-4 sm:p-8 ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+                  className="object-contain p-4 sm:p-8 select-none"
                   priority
                   sizes="95vw"
-                  style={{ touchAction: isZoomed ? 'pan-x pan-y' : 'none' }} // Enable panning on mobile when zoomed
+                  // prevent Next.js image from handling pointer events in a way that breaks gestures
+                  style={{ pointerEvents: 'none' }}
                 />
               </motion.div>
             </div>
