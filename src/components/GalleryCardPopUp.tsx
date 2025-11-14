@@ -16,7 +16,7 @@ interface GalleryCardPopUpProps {
 }
 
 export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCardPopUpProps) {
-  // Zoom & pan state
+  // Zoom & pan state (initial values will be used on mount; remount when selectedImage._id changes)
   const [isZoomed, setIsZoomed] = useState(false);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -33,14 +33,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
   const MIN_SCALE = 1;
   const MAX_SCALE = 3;
 
-  // Reset zoom/pan when image changes or modal closed
-  useEffect(() => {
-    setScale(1);
-    setTranslate({ x: 0, y: 0 });
-    setIsZoomed(false);
-  }, [selectedImage]);
-
-  // Close modal on ESC key
+  // Close modal on ESC key and prevent body scroll while open
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && selectedImage) {
@@ -58,7 +51,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
     };
   }, [selectedImage, onClose]);
 
-  // Helpers: distance & center between two touches
+  // Helpers: distance & center between two touches (DOM Touch)
   const getTouchDistance = (t1: Touch, t2: Touch) => {
     const dx = t1.clientX - t2.clientX;
     const dy = t1.clientY - t2.clientY;
@@ -73,12 +66,9 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
     const container = containerRef.current;
     if (!container) return { x: tx, y: ty };
 
-    // container visible area
     const cw = container.clientWidth;
     const ch = container.clientHeight;
 
-    // When image is scaled, the effective content is scale * cw (since Image uses object-contain, it's approximate)
-    // We allow some leeway but clamp roughly to prevent losing image completely.
     const maxX = Math.max(0, (currentScale - 1) * cw / 2 + 40);
     const maxY = Math.max(0, (currentScale - 1) * ch / 2 + 40);
 
@@ -91,36 +81,36 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
   // Touch handlers (mobile)
   const onTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
-      // start pinch
-      const d = getTouchDistance(e.touches[0], e.touches[1]);
+      // cast React.Touch to DOM Touch safely
+      const t0 = e.touches[0] as unknown as Touch;
+      const t1 = e.touches[1] as unknown as Touch;
+      const d = getTouchDistance(t0, t1);
       lastTouchDistance.current = d;
-      lastTouchCenter.current = getTouchCenter(e.touches[0], e.touches[1]);
+      lastTouchCenter.current = getTouchCenter(t0, t1);
     } else if (e.touches.length === 1) {
-      // start pan
       isPanning.current = true;
-      lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const t = e.touches[0] as unknown as Touch;
+      lastPan.current = { x: t.clientX, y: t.clientY };
     }
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastTouchDistance.current != null && lastTouchCenter.current) {
-      const newD = getTouchDistance(e.touches[0], e.touches[1]);
-      const newCenter = getTouchCenter(e.touches[0], e.touches[1]);
+      const t0 = e.touches[0] as unknown as Touch;
+      const t1 = e.touches[1] as unknown as Touch;
+      const newD = getTouchDistance(t0, t1);
+      const newCenter = getTouchCenter(t0, t1);
 
-      // scale change ratio
       const ratio = newD / lastTouchDistance.current;
       let nextScale = scale * ratio;
       nextScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, nextScale));
 
-      // Calculate how translate should change so zoom focuses around pinch center
       const container = containerRef.current;
       if (container) {
-        // container rect
         const rect = container.getBoundingClientRect();
         const originX = newCenter.x - rect.left;
         const originY = newCenter.y - rect.top;
 
-        // transform origin effect: newTranslate = origin + (oldTranslate - origin) * (newScale/oldScale)
         const oldScale = scale;
         const oldTranslate = translate;
         const newTranslateX = originX + (oldTranslate.x - originX) * (nextScale / oldScale);
@@ -133,11 +123,10 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
       setScale(nextScale);
       setIsZoomed(nextScale > 1);
 
-      // update refs
       lastTouchDistance.current = newD;
       lastTouchCenter.current = newCenter;
     } else if (e.touches.length === 1 && isPanning.current && lastPan.current) {
-      const t = e.touches[0];
+      const t = e.touches[0] as unknown as Touch;
       const dx = t.clientX - lastPan.current.x;
       const dy = t.clientY - lastPan.current.y;
 
@@ -160,7 +149,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
 
   // Mouse handlers (desktop)
   const onMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // only left click
+    if (e.button !== 0) return;
     isPanning.current = true;
     lastPan.current = { x: e.clientX, y: e.clientY };
     (e.target as HTMLElement).style.cursor = 'grabbing';
@@ -186,9 +175,8 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
     e.preventDefault();
     const delta = -e.deltaY;
     const zoomFactor = delta > 0 ? 1.08 : 0.92;
-    let nextScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * zoomFactor));
+    const nextScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * zoomFactor));
 
-    // Zoom around cursor
     const container = containerRef.current;
     if (container) {
       const rect = container.getBoundingClientRect();
@@ -211,8 +199,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
   const onDouble = (clientX?: number, clientY?: number) => {
     const now = Date.now();
     if (now - lastClick.current < 300) {
-      // double (fast) => toggle
-      const nextScale = scale > 1 ? 1 : 2; // toggle between 1 and 2
+      const nextScale = scale > 1 ? 1 : 2;
       if (clientX != null && clientY != null && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const originX = clientX - rect.left;
@@ -232,18 +219,8 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
     lastClick.current = now;
   };
 
-  // Handlers bound to container for click/touch/mouse
   const handleContainerClick = (e: React.MouseEvent) => {
-    // Prevent click closing when interacting; double click handled here
     onDouble(e.clientX, e.clientY);
-  };
-
-  const handleImageClick = () => {
-    // If not zoomed, single tap toggles small zoom (like your prior behaviour)
-    const nextScale = scale > 1 ? 1 : 1.5;
-    setScale(nextScale);
-    setIsZoomed(nextScale > 1);
-    setTranslate({ x: 0, y: 0 });
   };
 
   const handleCloseZoom = () => {
@@ -274,12 +251,12 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
           onClick={(e) => {
-            // close when clicking backdrop only
             if (e.target === e.currentTarget) onClose();
           }}
         >
+          {/* NOTE: key uses selectedImage._id so modal remounts when image changes (resets local state) */}
           <motion.div
-            key="modal-content"
+            key={`modal-content-${selectedImage._id}`}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
@@ -303,11 +280,10 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
               }}
               onWheel={onWheel}
               onClick={handleContainerClick}
-              style={{ touchAction: isZoomed ? 'none' : 'manipulation' }} // allow gestures when zoomed
+              style={{ touchAction: isZoomed ? 'none' : 'manipulation' }}
             >
               <motion.div
                 className="relative w-full h-full flex items-center justify-center"
-                // apply transform based on scale & translate
                 style={{
                   transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
                   transition: 'transform 0.05s linear',
@@ -322,7 +298,6 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
                   className="object-contain p-4 sm:p-8 select-none"
                   priority
                   sizes="95vw"
-                  // prevent Next.js image from handling pointer events in a way that breaks gestures
                   style={{ pointerEvents: 'none' }}
                 />
               </motion.div>
