@@ -6,29 +6,33 @@ import { motion } from 'framer-motion';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Desktop nav structure
-  const links = [
+  // Desktop menu items
+  const links: { href: string; label: string }[] = [
     { href: '/', label: 'Home' },
     { href: '/gallery', label: 'Gallery' },
     { href: '/services', label: 'Services' },
+    { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
     { href: '/admin', label: 'Admin' },
   ];
 
-  // Mobile menu items
-  const mobileItems = ['Home', 'Gallery', 'Services', 'Contact', 'Admin'];
+  // Mobile menu items (same order)
+  const mobileItems = ['Home', 'Gallery', 'Services', 'About', 'Contact', 'Admin'];
 
   return (
     <nav className="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-[#8D6E63]/20 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <div className="flex justify-between items-center h-14 sm:h-16">
           <div className="flex items-center min-w-0">
-            <Link href="/" className="text-xl sm:text-2xl font-bold text-[#3D2817] hover:text-[#6D4C41] transition-colors truncate">
+            <Link
+              href="/"
+              className="text-xl sm:text-2xl font-bold text-[#3D2817] hover:text-[#6D4C41] transition-colors truncate"
+            >
               Mahi Mehendi
             </Link>
           </div>
 
-          {/* Desktop Nav */}
+          {/* Desktop menu */}
           <div className="hidden md:flex space-x-4 lg:space-x-8 items-center">
             {links.map(({ href, label }) => (
               <Link
@@ -42,7 +46,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Hamburger */}
+          {/* Mobile menu button */}
           <button
             className="md:hidden text-[#6D4C41] shrink-0 ml-2"
             onClick={() => setIsOpen(!isOpen)}
@@ -54,7 +58,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Dropdown */}
+        {/* Mobile dropdown menu */}
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
