@@ -25,7 +25,7 @@ export default function Reviews() {
             transition={{ delay: i * 0.1 }}
             className="bg-white p-5 sm:p-6 md:p-8 rounded-lg shadow-lg border border-[#8D6E63]/20 hover:shadow-xl transition-all duration-300 w-full"
           >
-            <p className="text-[#6D4C41] mb-4 text-base sm:text-lg leading-relaxed">"{review.text}"</p>
+            <p className="text-[#6D4C41] mb-4 text-base sm:text-lg leading-relaxed">&quot;{review.text}&quot;</p>
             <p className="font-semibold text-[#3D2817] text-right text-sm sm:text-base">- {review.name}</p>
           </motion.div>
         ))}

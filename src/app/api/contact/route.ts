@@ -9,9 +9,14 @@ export async function POST(request: Request) {
     await connectDB();
     console.log('Connected to MongoDB successfully');
 
-    // Get form data
-    const body = await request.json();
-    const { name, emailOrPhone, occasion, preferredDate, message } = body;
+    // Parse request body as unknown and narrow types safely
+    const body = (await request.json()) as Record<string, unknown>;
+
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const emailOrPhone = typeof body.emailOrPhone === 'string' ? body.emailOrPhone.trim() : '';
+    const occasion = typeof body.occasion === 'string' ? body.occasion.trim() : '';
+    const preferredDate = typeof body.preferredDate === 'string' ? body.preferredDate.trim() : '';
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
 
     // Validate input
     if (!name || !emailOrPhone || !occasion || !preferredDate || !message) {
@@ -44,12 +49,11 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
+    // Narrow error type safely
     console.error('Contact form error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to submit contact form. Please try again.' },
-      { status: 500 }
-    );
+    const errMsg = error instanceof Error ? error.message : 'Failed to submit contact form. Please try again.';
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
 
@@ -58,14 +62,11 @@ export async function GET() {
   try {
     await connectDB();
     const contacts = await Contact.find({}).sort({ createdAt: -1 }); // Sort by newest first
-    console.log(`Fetched ${contacts.length} contacts from contacts collection`);
+    console.log(`Fetched ${Array.isArray(contacts) ? contacts.length : 'unknown number of'} contacts from contacts collection`);
     return NextResponse.json(contacts);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching contacts:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch contacts' },
-      { status: 500 }
-    );
+    const errMsg = error instanceof Error ? error.message : 'Failed to fetch contacts';
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
-

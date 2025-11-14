@@ -4,19 +4,26 @@ import Image from '@/models/Image';
 
 export async function GET() {
   try {
-    // Connect to MongoDB database 'mahi_mehendi'
+    // Connect to MongoDB
     await connectDB();
-    
-    // Fetch all images from 'gallery' collection
-    const images = await Image.find({}).sort({ createdAt: -1 }); // Sort by newest first
-    
-    console.log(`Fetched ${images.length} images from gallery collection`);
-    
+
+    // Fetch all images, newest first
+    const images = await Image.find({}).sort({ createdAt: -1 });
+
+    console.log(`Fetched ${Array.isArray(images) ? images.length : 'unknown number of'} images from gallery collection`);
+
     return NextResponse.json(images);
-  } catch (error: any) {
+  } catch (error) {
+    // Safe TypeScript narrowing
     console.error('Error fetching images:', error);
+
+    const errMessage =
+      error instanceof Error
+        ? error.message
+        : 'Failed to fetch images';
+
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch images' },
+      { error: errMessage },
       { status: 500 }
     );
   }
