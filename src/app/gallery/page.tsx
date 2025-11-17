@@ -212,7 +212,7 @@ export default function Gallery() {
             animate="visible"
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
           >
-            {filteredImages.map((img, index) => (
+            {filteredImages.map((img) => (
               <motion.div
                 key={`${img._id}-${selectedCategory}`}
                 variants={itemVariants}

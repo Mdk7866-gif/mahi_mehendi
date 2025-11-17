@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, Clock, Users, Award, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Clock, Award, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Service {
@@ -49,10 +50,15 @@ export default function ServicesPage(): React.ReactElement {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
+  const [imageScale, setImageScale] = useState(1);
 
   const imgWrapperRef = useRef<HTMLDivElement | null>(null);
   const transformRef = useRef({ scale: 1, tx: 0, ty: 0 });
-  const lastTouchRef = useRef<any>(null);
+  const lastTouchRef = useRef<
+    | { type: 'pinch'; distance: number; scaleStart: number; mid: { x: number; y: number } }
+    | { type: 'pan'; x: number; y: number }
+    | null
+  >(null);
   const isPanningRef = useRef(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -69,7 +75,7 @@ export default function ServicesPage(): React.ReactElement {
         alt: 'Bridal mehendi',
         ctaText: 'Book Now',
         ctaLink: '/contact',
-        price: 'From \u20B96,999'
+        price: 'From ₹6,999'
       },
       {
         id: 'engagement',
@@ -82,7 +88,7 @@ export default function ServicesPage(): React.ReactElement {
         alt: 'Engagement mehendi',
         ctaText: 'Book Now',
         ctaLink: '/contact',
-        price: 'From \u20B93,499'
+        price: 'From ₹3,499'
       },
       {
         id: 'babyshower',
@@ -95,7 +101,7 @@ export default function ServicesPage(): React.ReactElement {
         alt: 'Baby shower mehendi',
         ctaText: 'Book Now',
         ctaLink: '/contact',
-        price: 'Packages from \u20B91,199'
+        price: 'Packages from ₹1,199'
       },
       {
         id: 'sider',
@@ -108,7 +114,7 @@ export default function ServicesPage(): React.ReactElement {
         alt: 'Sider mehendi',
         ctaText: 'Book Now',
         ctaLink: '/contact',
-        price: 'From \u20B9699'
+        price: 'From ₹699'
       }
     ];
 
@@ -125,12 +131,14 @@ export default function ServicesPage(): React.ReactElement {
     if (!el) return;
     const { scale, tx, ty } = transformRef.current;
     el.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    setImageScale(scale);
   }, []);
 
   const openImageModal = useCallback((src: string) => {
     setModalSrc(src);
     setModalOpen(true);
     transformRef.current = { scale: 1, tx: 0, ty: 0 };
+    setImageScale(1);
     requestAnimationFrame(() => applyTransform());
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
@@ -142,6 +150,7 @@ export default function ServicesPage(): React.ReactElement {
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
     transformRef.current = { scale: 1, tx: 0, ty: 0 };
+    setImageScale(1);
     if (imgWrapperRef.current) imgWrapperRef.current.style.transform = '';
   }, []);
 
@@ -315,12 +324,12 @@ export default function ServicesPage(): React.ReactElement {
   return (
     <>
       <style>{`
-        /* ensure mobile first responsive images and prevent overflow */
         .service-card { overflow: hidden; }
         .service-image-outer { 
           min-width: 163px; 
           max-width: 40%; 
           height: auto;
+          position: relative;
         }
         @media (min-width: 768px) {
           .service-image-outer { max-width: 272px; }
@@ -330,10 +339,8 @@ export default function ServicesPage(): React.ReactElement {
         .image-modal-content { touch-action: none; will-change: transform; }
         .cursor-grabbing { cursor: grabbing !important; }
 
-        /* avoid horizontal scroll on small devices */
         html, body { overscroll-behavior-x: contain; }
 
-        /* Hover scale for images */
         .service-image-inner { transition: transform 0.3s ease; }
         .group:hover .service-image-inner { transform: scale(1.05); }
       `}</style>
@@ -382,7 +389,7 @@ export default function ServicesPage(): React.ReactElement {
               animate="visible"
               className="flex flex-col gap-4"
             >
-              {services.map((s, index) => (
+              {services.map((s) => (
                 <motion.article
                   key={s.id}
                   variants={itemVariants}
@@ -391,7 +398,7 @@ export default function ServicesPage(): React.ReactElement {
                   aria-labelledby={`service-${s.id}-title`}
                 >
                   <div
-                    className="service-image-outer flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all relative"
+                    className="service-image-outer flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all"
                     role="button"
                     tabIndex={0}
                     onClick={() => openImageModal(s.image)}
@@ -402,17 +409,18 @@ export default function ServicesPage(): React.ReactElement {
                     title="Tap to open image"
                   >
                     <motion.div 
-                      className="service-image-inner w-full h-full"
+                      className="service-image-inner w-full h-full relative"
+                      style={{ aspectRatio: '3/4' }}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <img
+                      <Image
                         src={s.image}
                         alt={s.alt}
+                        fill
+                        sizes="(max-width: 768px) 40vw, 272px"
+                        className="object-cover"
                         loading="lazy"
-                        className="object-cover w-full h-full block"
-                        style={{ aspectRatio: '3/4' }}
-                        draggable={false}
                       />
                     </motion.div>
                   </div>
@@ -477,7 +485,6 @@ export default function ServicesPage(): React.ReactElement {
                       transition={{ delay: 0.5 }}
                       className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
                     >
-                      {/* Primary CTA */}
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Link
                           href={s.ctaLink}
@@ -487,7 +494,6 @@ export default function ServicesPage(): React.ReactElement {
                         </Link>
                       </motion.div>
 
-                      {/* Secondary Link */}
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Link
                           href="/gallery"
@@ -668,9 +674,10 @@ export default function ServicesPage(): React.ReactElement {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: transformRef.current.scale > 1 ? 'grab' : 'auto'
+                cursor: imageScale > 1 ? 'grab' : 'auto'
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={modalSrc}
                 alt="preview"

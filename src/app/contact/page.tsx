@@ -144,7 +144,7 @@ export default function Contact(): React.ReactElement {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto mt-2"
           >
-            Tell us your requirements and we'll reach out to plan your mehendi session.
+            Tell us your requirements and we&apos;ll reach out to plan your mehendi session.
           </motion.p>
         </motion.header>
 
@@ -273,7 +273,7 @@ export default function Contact(): React.ReactElement {
               transition={{ delay: 0.2 }}
               className="text-lg sm:text-xl text-amber-800 font-semibold"
             >
-              Thank you! We'll get back to you soon.
+              Thank you! We&apos;ll get back to you soon.
             </motion.p>
             <motion.button 
               variants={buttonHoverVariants}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Users, Award, Heart, Clock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -194,7 +195,7 @@ export default function HomePage(): React.ReactElement {
                   image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
                   link: '/services'
                 }
-              ].map((service, index) => (
+              ].map((service) => (
                 <motion.div
                   key={service.title}
                   variants={itemVariants}
@@ -202,12 +203,16 @@ export default function HomePage(): React.ReactElement {
                   className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 overflow-hidden cursor-pointer"
                   onClick={() => {}} // Placeholder
                 >
+                  {/* service image container: use next/image with fill for cover behavior */}
                   <div className="service-image relative overflow-hidden">
-                    <img
+                    <Image
                       src={service.image}
                       alt={service.title}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 520px"
+                      style={{ objectFit: 'cover', transform: 'translateZ(0)' }}
                       draggable={false}
+                      priority={false}
                     />
                   </div>
                   <div className="p-6">
@@ -273,12 +278,19 @@ export default function HomePage(): React.ReactElement {
                   whileHover={{ scale: 1.05 }}
                   className="group relative overflow-hidden rounded-2xl shadow-md border border-amber-200 bg-white/95 cursor-pointer aspect-square"
                 >
-                  <img
-                    src={imgSrc}
-                    alt="Gallery Preview"
-                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
-                    draggable={false}
-                  />
+                  {/* gallery image: relative + Image fill */}
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={imgSrc}
+                      alt={`Gallery preview ${index + 1}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      style={{ objectFit: 'cover', transform: 'translateZ(0)' }}
+                      draggable={false}
+                      priority={false}
+                    />
+                  </div>
+
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <Link href="/gallery" className="absolute inset-0 flex items-end p-4">
                     <span className="text-white font-bold text-sm">View More</span>
@@ -315,12 +327,12 @@ export default function HomePage(): React.ReactElement {
               viewport={{ once: true }}
               className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"
             >
-              {[
+              {[ 
                 { icon: Users, label: 'Happy Clients', value: '500+' },
                 { icon: Heart, label: 'Years Experience', value: '8+' },
                 { icon: Award, label: 'Events Covered', value: '1000+' },
                 { icon: Clock, label: 'Design Time', value: '30-90 min' }
-              ].map((stat, index) => (
+              ].map((stat) => (
                 <motion.div
                   key={stat.label}
                   variants={itemVariants}
@@ -349,12 +361,7 @@ export default function HomePage(): React.ReactElement {
                 With a passion for cultural artistry, Mahi brings 8+ years of expertise to every design. From bridal extravagance to subtle celebrations, we create henna that tells your story.
               </p>
               <div className="flex flex-wrap justify-center gap-3 mb-6">
-                {[
-                  'Premium Natural Henna',
-                  'Custom Designs',
-                  'Safe & Long-Lasting',
-                  'Group Packages'
-                ].map((feature, i) => (
+                {[ 'Premium Natural Henna', 'Custom Designs', 'Safe & Long-Lasting', 'Group Packages' ].map((feature, i) => (
                   <motion.span
                     key={feature}
                     initial={{ opacity: 0, x: -10 }}

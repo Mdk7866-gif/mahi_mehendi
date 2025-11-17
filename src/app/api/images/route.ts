@@ -13,13 +13,29 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .lean(); // Use lean() for faster queries (returns plain JS objects)
 
-    // Ensure we return an array and log categories for debugging
-    const imagesArray = Array.isArray(images) ? images : [];
-    const categories = [...new Set(imagesArray.map((img: any) => img?.category).filter(Boolean))];
+    // Define interface for the expected image document
+    interface ImageDocument {
+      _id: string;
+      url: string;
+      category: string;
+      price: number;
+    }
+    
+    // Type the images array properly - map to ensure correct types
+    const imagesArray: ImageDocument[] = Array.isArray(images) 
+      ? images.map((img: any) => ({
+          _id: img._id.toString(),
+          url: img.url,
+          category: img.category,
+          price: img.price
+        }))
+      : [];
+    
+    const categories = [...new Set(imagesArray.map((img: ImageDocument) => img?.category).filter(Boolean))];
     
     console.log(`Fetched ${imagesArray.length} images from gallery collection`);
     console.log(`Available categories:`, categories);
-    console.log(`Category breakdown:`, imagesArray.reduce((acc: any, img: any) => {
+    console.log(`Category breakdown:`, imagesArray.reduce((acc: Record<string, number>, img: ImageDocument) => {
       const cat = img?.category || 'unknown';
       acc[cat] = (acc[cat] || 0) + 1;
       return acc;

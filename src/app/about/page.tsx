@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Users, Award, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -148,16 +149,20 @@ export default function AboutPage(): React.ReactElement {
               </div>
               <div className="lg:w-1/2 flex justify-center">
                 <motion.div 
-                  className="artist-image rounded-2xl overflow-hidden shadow-lg border-4 border-white/50"
+                  className="artist-image rounded-2xl overflow-hidden shadow-lg border-4 border-white/50 relative"
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.3 }}
+                  style={{ width: '100%', maxWidth: 520 }}
                 >
-                  {/* Placeholder for artist photo - replace with actual image */}
-                  <img
+                  {/* Next.js Image: responsive, optimized */}
+                  <Image
                     src="https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp"
                     alt="Mahi, the artist behind Mahi Mehendi"
-                    className="object-cover w-full h-full"
-                    style={{ aspectRatio: '1/1' }}
+                    width={800}
+                    height={800}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 520px"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%', aspectRatio: '1/1' }}
+                    priority={false}
                   />
                 </motion.div>
               </div>
@@ -190,7 +195,7 @@ export default function AboutPage(): React.ReactElement {
               </motion.div>
               <motion.div variants={itemVariants} className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-amber-200 shadow-md">
                 <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                  Every stroke is infused with joy, precision, and a deep respect for the art's roots. We believe henna is more than decoration — it's a celebration of life's beautiful moments.
+                  Every stroke is infused with joy, precision, and a deep respect for the art&apos;s roots. We believe henna is more than decoration — it&apos;s a celebration of life&apos;s beautiful moments.
                 </p>
               </motion.div>
             </motion.div>
@@ -218,7 +223,7 @@ export default function AboutPage(): React.ReactElement {
                 { icon: Heart, title: 'Authenticity', desc: 'Using only premium, natural henna for safe, long-lasting designs that honor tradition.' },
                 { icon: Users, title: 'Personalization', desc: 'Tailored motifs that reflect your unique story and style — no two designs are alike.' },
                 { icon: Award, title: 'Excellence', desc: 'Committed to flawless artistry, hygiene, and timely service for every celebration.' }
-              ].map((value, index) => (
+              ].map((value) => (
                 <motion.div
                   key={value.title}
                   variants={itemVariants}
@@ -245,7 +250,7 @@ export default function AboutPage(): React.ReactElement {
               <Sparkles className="mx-auto mb-3 text-amber-600" size={24} />
               <h3 className="text-xl sm:text-2xl font-bold text-amber-900 mb-3">Ready to Create Magic?</h3>
               <p className="text-gray-700 text-sm sm:text-base mb-6 max-w-md mx-auto">
-                Let's bring your vision to life with exquisite Mehendi designs.
+                Let&apos;s bring your vision to life with exquisite Mehendi designs.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
