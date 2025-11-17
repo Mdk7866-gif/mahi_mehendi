@@ -16,6 +16,33 @@ interface GalleryCardPopUpProps {
   onClose: () => void;
 }
 
+// Helper function to get optimized Cloudinary image URL
+function getOptimizedImageUrl(url: string, width: number): string {
+  // If it's already a Cloudinary URL, add transformation
+  if (url.includes('cloudinary.com')) {
+    // Check if URL already has transformations (contains /upload/v or /upload/c or /upload/w etc)
+    if (url.includes('/upload/')) {
+      const uploadIndex = url.indexOf('/upload/');
+      const afterUpload = url.substring(uploadIndex + 8); // +8 for '/upload/'
+      
+      // Check if transformations already exist (starts with v, c, w, etc.)
+      const hasTransformations = /^[vcwqfl]/i.test(afterUpload);
+      
+      if (!hasTransformations) {
+        // No transformations exist, add them
+        return url.replace('/upload/', `/upload/w_${width},q_auto:good,f_auto/`);
+      } else {
+        // Transformations exist, replace or append width if needed
+        // For simplicity, just ensure quality and format are set
+        if (!url.includes('q_auto') && !url.includes('q_')) {
+          return url.replace('/upload/', `/upload/q_auto:good,f_auto/`);
+        }
+      }
+    }
+  }
+  return url;
+}
+
 export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCardPopUpProps) {
   // Zoom & pan state (initial values will be used on mount; remount when selectedImage._id changes)
   const [isZoomed, setIsZoomed] = useState(false);
@@ -295,12 +322,13 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
                 onDoubleClick={() => onDouble()}
               >
                 <Image
-                  src={selectedImage.url}
+                  src={getOptimizedImageUrl(selectedImage.url, 1920)}
                   alt="Mehendi Design Full View"
                   fill
                   className="object-contain p-4 sm:p-8 select-none"
                   priority
                   sizes="95vw"
+                  quality={90}
                   style={{ pointerEvents: 'none' }}
                 />
               </motion.div>

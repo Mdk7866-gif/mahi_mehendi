@@ -42,8 +42,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       if (isNaN(priceNum) || priceNum < 0) {
         return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
       }
-      if (category !== 'normal' && category !== 'bridal') {
-        return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
+        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
       }
 
       let newUrl = existing.url;
@@ -56,7 +56,22 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         const buffer = Buffer.from(await file.arrayBuffer());
         const uploadResult = await new Promise<unknown>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
-            { resource_type: 'image', folder: 'mahi_mehendi', allowed_formats: ['jpg', 'jpeg', 'png', 'webp'] },
+            {
+              resource_type: 'image',
+              folder: 'mahi_mehendi',
+              allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+              quality: 'auto:good',
+              fetch_format: 'auto',
+              transformation: [
+                {
+                  width: 1920,
+                  height: 1920,
+                  crop: 'limit',
+                  quality: 'auto:good',
+                  fetch_format: 'auto',
+                }
+              ],
+            },
             (error, result) => {
               if (error) reject(error);
               else resolve(result);
@@ -81,7 +96,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
       existing.url = newUrl;
       existing.publicId = newPublicId;
-      existing.category = category as 'normal' | 'bridal';
+      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider';
       existing.price = priceNum;
       await existing.save();
 
@@ -103,10 +118,10 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       if (isNaN(priceNum) || priceNum < 0) {
         return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
       }
-      if (category !== 'normal' && category !== 'bridal') {
-        return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
+        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
       }
-      existing.category = category as 'normal' | 'bridal';
+      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider';
       existing.price = priceNum;
       await existing.save();
       return NextResponse.json({

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
+import GalleryCardPopUp from '@/components/GalleryCardPopUp';
 
 type Category = 'bridal' | 'engagement' | 'babyshower' | 'sider';
 
@@ -22,6 +23,7 @@ export default function Admin(): React.ReactElement {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<{ category: Category; price: string }>({ category: 'bridal', price: '' });
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImageType | null>(null);
 
   // confirmation modal state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -38,6 +40,14 @@ export default function Admin(): React.ReactElement {
   }, []);
 
   const filteredImages = images.filter((i) => i.category === selectedCategory);
+
+  const handleImageClick = (img: ImageType) => {
+    setSelectedImage(img);
+  };
+
+  const closeModal = () => {
+    setSelectedImage(null);
+  };
 
   const startEdit = (img: ImageType) => {
     setEditingId(img._id);
@@ -342,7 +352,8 @@ export default function Admin(): React.ReactElement {
                   key={img._id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="admin-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 overflow-hidden"
+                  className="admin-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 overflow-hidden cursor-pointer"
+                  onClick={() => handleImageClick(img)}
                 >
                   <div className="relative h-64 bg-amber-50 admin-image">
                     <Image
@@ -416,7 +427,7 @@ export default function Admin(): React.ReactElement {
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => startEdit(img)} 
+                        onClick={(e) => { e.stopPropagation(); startEdit(img); }} 
                         className="px-3 py-1.5 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700"
                       >
                         Edit
@@ -424,7 +435,7 @@ export default function Admin(): React.ReactElement {
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => confirmDelete(img._id)} 
+                        onClick={(e) => { e.stopPropagation(); confirmDelete(img._id); }} 
                         className="px-3 py-1.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700"
                       >
                         Delete
@@ -493,6 +504,9 @@ export default function Admin(): React.ReactElement {
           <div className="absolute top-20 left-6 w-40 h-40 bg-amber-400 rounded-full blur-3xl" />
           <div className="absolute bottom-12 right-6 w-56 h-56 bg-orange-400 rounded-full blur-3xl" />
         </div>
+
+        {/* Popup Modal */}
+        <GalleryCardPopUp selectedImage={selectedImage} onClose={closeModal} />
       </main>
     </>
   );

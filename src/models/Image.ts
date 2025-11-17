@@ -2,14 +2,14 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IImage extends Document {
   url: string;
-  category: 'normal' | 'bridal';
+  category: 'bridal' | 'engagement' | 'babyshower' | 'sider';
   price: number;
   publicId?: string;
 }
 
 const ImageSchema: Schema = new Schema({
   url: { type: String, required: true },
-  category: { type: String, enum: ['normal', 'bridal'], required: true },
+  category: { type: String, enum: ['bridal', 'engagement', 'babyshower', 'sider'], required: true },
   price: { type: Number, required: true },
   publicId: { type: String },
 }, {

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -34,6 +34,33 @@ const cardHoverVariants = {
   hover: { scale: 1.02, transition: { duration: 0.2 } }
 };
 
+// Helper function to get optimized Cloudinary image URL
+function getOptimizedImageUrl(url: string, width: number): string {
+  // If it's already a Cloudinary URL, add transformation
+  if (url.includes('cloudinary.com')) {
+    // Check if URL already has transformations (contains /upload/v or /upload/c or /upload/w etc)
+    if (url.includes('/upload/')) {
+      const uploadIndex = url.indexOf('/upload/');
+      const afterUpload = url.substring(uploadIndex + 8); // +8 for '/upload/'
+      
+      // Check if transformations already exist (starts with v, c, w, etc.)
+      const hasTransformations = /^[vcwqfl]/i.test(afterUpload);
+      
+      if (!hasTransformations) {
+        // No transformations exist, add them
+        return url.replace('/upload/', `/upload/w_${width},q_auto:good,f_auto/`);
+      } else {
+        // Transformations exist, replace or append width if needed
+        // For simplicity, just ensure quality and format are set
+        if (!url.includes('q_auto') && !url.includes('q_')) {
+          return url.replace('/upload/', `/upload/q_auto:good,f_auto/`);
+        }
+      }
+    }
+  }
+  return url;
+}
+
 export default function Gallery() {
   const [images, setImages] = useState<ImageType[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ImageType['category']>('bridal');
@@ -42,18 +69,47 @@ export default function Gallery() {
 
   useEffect(() => {
     fetch('/api/images')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        setImages(data);
+        // Ensure data is an array
+        const imagesArray = Array.isArray(data) ? data : [];
+        console.log('Fetched images:', imagesArray.length);
+        console.log('Image categories:', imagesArray.map((img: ImageType) => img.category));
+        setImages(imagesArray);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Fetch error:', err);
+        setImages([]);
         setLoading(false);
       });
   }, []);
 
-  const filteredImages = images.filter((img) => img.category === selectedCategory);
+  // Use useMemo to ensure filtered images update correctly
+  const filteredImages = useMemo(() => {
+    const filtered = images.filter((img) => {
+      // Case-insensitive comparison and trim whitespace
+      const imgCategory = String(img.category || '').toLowerCase().trim();
+      const selectedCat = String(selectedCategory || '').toLowerCase().trim();
+      return imgCategory === selectedCat;
+    });
+    console.log(`Filtering: ${images.length} total images, ${filtered.length} for category "${selectedCategory}"`);
+    return filtered;
+  }, [images, selectedCategory]);
+
+  // Debug: Log filtered images when category changes
+  useEffect(() => {
+    console.log(`Category changed to: ${selectedCategory}`);
+    console.log(`Total images: ${images.length}`);
+    console.log(`Filtered images for ${selectedCategory}:`, filteredImages.length);
+    console.log('All images categories:', images.map(img => img.category));
+    console.log('Filtered images:', filteredImages.map(img => ({ id: img._id, category: img.category })));
+  }, [selectedCategory, images, filteredImages]);
 
   const handleImageClick = (img: ImageType) => {
     console.log('Image clicked:', img._id);
@@ -150,6 +206,7 @@ export default function Gallery() {
 
           {/* Gallery Grid */}
           <motion.div 
+            key={`gallery-${selectedCategory}`}
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -157,7 +214,7 @@ export default function Gallery() {
           >
             {filteredImages.map((img, index) => (
               <motion.div
-                key={img._id}
+                key={`${img._id}-${selectedCategory}`}
                 variants={itemVariants}
                 whileHover={cardHoverVariants}
                 className="gallery-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 overflow-hidden cursor-pointer"
@@ -165,12 +222,16 @@ export default function Gallery() {
               >
                 <div className="relative h-[22rem] sm:h-[26rem] md:h-[29rem] lg:h-[32rem] bg-amber-50 gallery-image">
                   <Image
-                    src={img.url}
+                    src={getOptimizedImageUrl(img.url, 800)}
                     alt="Mehendi Design"
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     draggable={false}
+                    loading="lazy"
+                    quality={85}
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
                 </div>
 
@@ -181,13 +242,14 @@ export default function Gallery() {
             ))}
           </motion.div>
 
-          {filteredImages.length === 0 && (
+          {filteredImages.length === 0 && !loading && (
             <motion.p 
+              key={`empty-${selectedCategory}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center text-amber-700 mt-8 text-lg"
             >
-              No images yet. Upload via Admin!
+              No {selectedCategory} mehendi images available yet. Upload via Admin!
             </motion.p>
           )}
         </motion.div>

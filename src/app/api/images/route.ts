@@ -7,12 +7,30 @@ export async function GET() {
     // Connect to MongoDB
     await connectDB();
 
-    // Fetch all images, newest first
-    const images = await Image.find({}).sort({ createdAt: -1 });
+    // Fetch all images, newest first - only select necessary fields for faster queries
+    const images = await Image.find({})
+      .select('_id url category price')
+      .sort({ createdAt: -1 })
+      .lean(); // Use lean() for faster queries (returns plain JS objects)
 
-    console.log(`Fetched ${Array.isArray(images) ? images.length : 'unknown number of'} images from gallery collection`);
+    // Ensure we return an array and log categories for debugging
+    const imagesArray = Array.isArray(images) ? images : [];
+    const categories = [...new Set(imagesArray.map((img: any) => img?.category).filter(Boolean))];
+    
+    console.log(`Fetched ${imagesArray.length} images from gallery collection`);
+    console.log(`Available categories:`, categories);
+    console.log(`Category breakdown:`, imagesArray.reduce((acc: any, img: any) => {
+      const cat = img?.category || 'unknown';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {}));
 
-    return NextResponse.json(images);
+    // Add cache headers for better performance (reduced cache time for faster updates)
+    return NextResponse.json(imagesArray, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     // Safe TypeScript narrowing
     console.error('Error fetching images:', error);

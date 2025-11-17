@@ -44,8 +44,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Validate category
-    if (category !== 'normal' && category !== 'bridal') {
-      return NextResponse.json({ error: 'Invalid category. Must be "normal" or "bridal"' }, { status: 400 });
+    if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
+      return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
     }
 
     // Step 4: Convert file to buffer
@@ -53,13 +53,28 @@ export async function POST(request: Request): Promise<NextResponse> {
     const buffer = Buffer.from(bytes);
     console.log(`Uploading image to Cloudinary: ${file.name} (${file.size} bytes)`);
 
-    // Step 5: Upload to Cloudinary (wrap in Promise<unknown> and narrow later)
+    // Step 5: Upload to Cloudinary with optimizations
+    // Use async upload with compression and auto-format for faster uploads
     const uploadResult = await new Promise<unknown>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'image',
           folder: 'mahi_mehendi',
           allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+          // Optimize upload speed and file size
+          // Use on-the-fly transformations instead of eager to speed up uploads
+          quality: 'auto:good', // Auto quality with good compression
+          fetch_format: 'auto', // Auto-format to best format (WebP when supported)
+          // Limit max dimensions to reduce upload time
+          transformation: [
+            {
+              width: 1920, // Max width for full-size images
+              height: 1920, // Max height
+              crop: 'limit', // Don't crop, just limit size
+              quality: 'auto:good',
+              fetch_format: 'auto',
+            }
+          ],
         },
         (error, result) => {
           if (error) {
@@ -95,7 +110,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     console.log('Saving image to MongoDB collection: gallery');
     const newImage = new Image({
       url: secureUrl,
-      category: category as 'normal' | 'bridal',
+      category: category as 'bridal' | 'engagement' | 'babyshower' | 'sider',
       price: priceNum,
       publicId: publicId ?? undefined,
     });
