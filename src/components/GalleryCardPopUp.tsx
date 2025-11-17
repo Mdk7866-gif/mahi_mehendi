@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface ImageType {
   _id: string;
   url: string;
-  category: 'normal' | 'bridal';
+  category: 'bridal' | 'engagement' | 'babyshower' | 'sider';
   price: number;
 }
 
@@ -43,11 +44,13 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
 
     if (selectedImage) {
       document.addEventListener('keydown', handleEscape);
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     }
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     };
   }, [selectedImage, onClose]);
 
@@ -249,7 +252,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 image-modal-backdrop"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
@@ -261,13 +264,13 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="relative max-w-[95vw] max-h-[95vh] bg-white rounded-lg overflow-hidden shadow-2xl w-full"
+            className="relative max-w-[95vw] max-h-[95vh] bg-white rounded-2xl overflow-hidden shadow-2xl w-full"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Image Container */}
             <div
               ref={containerRef}
-              className={`relative w-full h-[85vh] sm:h-[90vh] flex items-center justify-center bg-[#FFF8F0] ${isZoomed ? 'overflow-auto touch-pan-y' : ''}`}
+              className={`relative w-full h-[85vh] sm:h-[90vh] flex items-center justify-center bg-amber-50 ${isZoomed ? 'overflow-auto touch-pan-y' : ''}`}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -305,47 +308,43 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
 
             {/* Zoom Reset Button - Visible only when zoomed */}
             {isZoomed && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleCloseZoom}
-                className="absolute top-16 right-4 z-10 bg-[#6D4C41]/90 text-white p-2 rounded-full hover:bg-[#3D2817] transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-[#6D4C41] focus:ring-offset-2"
+                className="absolute top-4 right-4 z-10 bg-amber-600/90 hover:bg-amber-700 text-white p-2 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 transition-all"
                 aria-label="Reset zoom"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-              </button>
+              </motion.button>
             )}
 
             {/* Price and Category Info */}
-            <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto sm:min-w-[200px] bg-[#FFF8F0]/95 backdrop-blur-sm p-4 rounded-lg text-center border border-[#8D6E63]/20 shadow-lg">
-              <p className="text-xl sm:text-2xl font-bold text-[#3D2817]">₹{selectedImage.price}</p>
-              <p className="text-sm sm:text-base text-[#6D4C41] mt-1 capitalize">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto sm:min-w-[200px] bg-white/95 backdrop-blur-sm p-4 rounded-xl text-center border border-amber-200 shadow-lg"
+            >
+              <p className="text-xl font-bold text-amber-900">₹{selectedImage.price}</p>
+              <p className="text-sm text-amber-700 mt-1 capitalize">
                 {selectedImage.category} Mehendi
               </p>
-            </div>
+            </motion.div>
 
             {/* Close Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 bg-[#6D4C41] text-white p-2 sm:p-3 rounded-full hover:bg-[#3D2817] transition-colors shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#6D4C41] focus:ring-offset-2"
+              className="absolute top-4 right-4 z-10 bg-amber-600 hover:bg-amber-700 text-white p-2 sm:p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 transition-all"
               aria-label="Close modal"
               type="button"
             >
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              <X size={20} />
+            </motion.button>
           </motion.div>
         </motion.div>
       )}
