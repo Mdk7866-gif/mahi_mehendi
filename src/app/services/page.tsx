@@ -1,7 +1,9 @@
 'use client';
+
 import Link from 'next/link';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles, Clock, Users, Award, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Service {
   id: string;
@@ -21,27 +23,39 @@ interface CourseModule {
   description: string;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45 } }
+};
+
+const cardHoverVariants = {
+  hover: { scale: 1.02, transition: { duration: 0.2 } }
+};
+
 export default function ServicesPage(): React.ReactElement {
-  // -------------------------
-  // Hooks - ALL declared at top
-  // -------------------------
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
 
-  // zoom/pan refs & state
   const imgWrapperRef = useRef<HTMLDivElement | null>(null);
   const transformRef = useRef({ scale: 1, tx: 0, ty: 0 });
   const lastTouchRef = useRef<any>(null);
   const isPanningRef = useRef(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
 
-  // -------------------------
-  // Initial dummy data load
-  // -------------------------
   useEffect(() => {
     const dummyServices: Service[] = [
       {
@@ -93,7 +107,7 @@ export default function ServicesPage(): React.ReactElement {
           'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
         alt: 'Sider mehendi',
         ctaText: 'Book Now',
-        ctaLink: 'contact',
+        ctaLink: '/contact',
         price: 'From \u20B9699'
       }
     ];
@@ -101,14 +115,11 @@ export default function ServicesPage(): React.ReactElement {
     const t = setTimeout(() => {
       setServices(dummyServices);
       setLoading(false);
-    }, 600);
+    }, 500);
 
     return () => clearTimeout(t);
   }, []);
 
-  // -------------------------
-  // Handlers & helpers
-  // -------------------------
   const applyTransform = useCallback(() => {
     const el = imgWrapperRef.current;
     if (!el) return;
@@ -119,13 +130,8 @@ export default function ServicesPage(): React.ReactElement {
   const openImageModal = useCallback((src: string) => {
     setModalSrc(src);
     setModalOpen(true);
-
-    // reset transforms
     transformRef.current = { scale: 1, tx: 0, ty: 0 };
-    // small timeout ensures imgWrapperRef exists before applying style
     requestAnimationFrame(() => applyTransform());
-
-    // prevent body scroll while modal is open
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
   }, [applyTransform]);
@@ -135,12 +141,10 @@ export default function ServicesPage(): React.ReactElement {
     setModalSrc(null);
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
-    // reset transforms
     transformRef.current = { scale: 1, tx: 0, ty: 0 };
     if (imgWrapperRef.current) imgWrapperRef.current.style.transform = '';
   }, []);
 
-  // ESC key listener (safe because closeModal is stable via useCallback)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && modalOpen) closeModal();
@@ -149,7 +153,6 @@ export default function ServicesPage(): React.ReactElement {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalOpen, closeModal]);
 
-  // Typescript: use React.Touch for events from React's TouchEvent
   function getDistance(t1: React.Touch, t2: React.Touch) {
     const dx = t2.clientX - t1.clientX;
     const dy = t2.clientY - t1.clientY;
@@ -188,7 +191,7 @@ export default function ServicesPage(): React.ReactElement {
       const newDistance = getDistance(touches[0], touches[1]);
       const scaleFactor = newDistance / lastTouchRef.current.distance;
       let newScale = lastTouchRef.current.scaleStart * scaleFactor;
-      newScale = Math.max(1, Math.min(4, newScale)); // clamp
+      newScale = Math.max(1, Math.min(4, newScale));
       transformRef.current.scale = newScale;
 
       const newMid = getMidpoint(touches[0], touches[1]);
@@ -227,7 +230,6 @@ export default function ServicesPage(): React.ReactElement {
     }
   }
 
-  // desktop handlers
   function onWheel(e: React.WheelEvent) {
     if (!modalOpen) return;
     e.preventDefault();
@@ -285,9 +287,6 @@ export default function ServicesPage(): React.ReactElement {
     applyTransform();
   }
 
-  // -------------------------
-  // COURSE MODULES (static)
-  // -------------------------
   const courseModules: CourseModule[] = [
     { title: 'Cone Making', duration: '1 Session', description: 'Perfect henna cones for smooth lines.' },
     { title: 'Basic Mehendi', duration: '2 Sessions', description: 'Foundational patterns and flow.' },
@@ -295,172 +294,284 @@ export default function ServicesPage(): React.ReactElement {
     { title: 'Advanced Bridal Mehendi', duration: '4 Sessions', description: 'Complex bridal layouts and timing.' }
   ];
 
-  // -------------------------
-  // EARLY LOADING RETURN (safe now)
-  // -------------------------
   if (loading) {
     return (
-      <div className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
-        <div className="text-center">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100"
+      >
+        <div className="text-center p-6">
           <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-amber-600 mx-auto" />
-            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-600 animate-pulse" size={32} />
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-600 mx-auto" />
+            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-600 animate-pulse" size={28} />
           </div>
-          <p className="mt-6 text-base text-amber-800 font-medium">Crafting your Mehendi magic...</p>
+          <p className="mt-4 text-sm text-amber-800 font-medium">Crafting your Mehendi magic...</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // -------------------------
-  // RENDER
-  // -------------------------
   return (
     <>
       <style>{`
-        /* 20% taller images */
-        .service-image {
-          height: calc(21rem * 1.2);
+        /* ensure mobile first responsive images and prevent overflow */
+        .service-card { overflow: hidden; }
+        .service-image-outer { 
+          min-width: 163px; 
+          max-width: 40%; 
+          height: auto;
         }
         @media (min-width: 768px) {
-          .service-image {
-            height: calc(17rem * 1.2);
-          }
+          .service-image-outer { max-width: 272px; }
         }
 
-        .image-modal-backdrop {
-          background: rgba(10,10,10,0.85);
-          backdrop-filter: blur(6px);
-          z-index: 60;
-        }
+        .image-modal-backdrop { background: rgba(10,10,10,0.9); backdrop-filter: blur(6px); z-index: 60; }
+        .image-modal-content { touch-action: none; will-change: transform; }
+        .cursor-grabbing { cursor: grabbing !important; }
 
-        .image-modal-content {
-          max-width: 95vw;
-          max-height: 95vh;
-          touch-action: none;
-          will-change: transform;
-        }
+        /* avoid horizontal scroll on small devices */
+        html, body { overscroll-behavior-x: contain; }
 
-        .cursor-grabbing {
-          cursor: grabbing !important;
-        }
+        /* Hover scale for images */
+        .service-image-inner { transition: transform 0.3s ease; }
+        .group:hover .service-image-inner { transform: scale(1.05); }
       `}</style>
 
-      <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Hero */}
-          <header className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm mx-auto">
-              <Sparkles className="text-amber-600" size={16} />
+      <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-x-hidden">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+        >
+          <motion.header 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-6"
+          >
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-3 shadow-sm mx-auto">
+              <Sparkles className="text-amber-600" size={14} />
               <span className="text-xs text-amber-800 font-medium">Premium Mehendi Artistry</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight">Our Services</h1>
-            <p className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto mt-2">Exquisite henna designs for every celebration — from intimate gatherings to grand weddings.</p>
-          </header>
+            <motion.h1 
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-900 leading-tight"
+            >
+              Our Services
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-amber-700 text-xs sm:text-sm max-w-xl mx-auto mt-2"
+            >
+              Exquisite henna designs for every celebration — from intimate gatherings to grand weddings.
+            </motion.p>
+          </motion.header>
 
-          {/* Services grid */}
-          <section aria-labelledby="services-heading" className="mb-10">
+          <section aria-labelledby="services-heading" className="mb-8">
             <h2 id="services-heading" className="sr-only">Services</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col gap-4"
+            >
               {services.map((s, index) => (
-                <article
+                <motion.article
                   key={s.id}
-                  className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-amber-200 p-4 md:p-5 hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row items-start gap-4"
+                  variants={itemVariants}
+                  whileHover={cardHoverVariants}
+                  className="service-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 p-3 flex items-start gap-3 md:gap-4"
                   aria-labelledby={`service-${s.id}-title`}
-                  style={{ animationDelay: `${index * 70}ms` }}
                 >
                   <div
-                    className="relative flex-shrink-0 w-full md:w-40 rounded-2xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all service-image"
+                    className="service-image-outer flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all relative"
                     role="button"
                     tabIndex={0}
                     onClick={() => openImageModal(s.image)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        openImageModal(s.image);
-                      }
+                      if (e.key === 'Enter' || e.key === ' ') openImageModal(s.image);
                     }}
                     aria-label={`Open ${s.title} image`}
-                    title="Click to open image"
+                    title="Tap to open image"
                   >
-                    <img
-                      src={s.image}
-                      alt={s.alt}
-                      loading="lazy"
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                      draggable={false}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-amber-900/10 to-transparent" aria-hidden />
+                    <motion.div 
+                      className="service-image-inner w-full h-full"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <img
+                        src={s.image}
+                        alt={s.alt}
+                        loading="lazy"
+                        className="object-cover w-full h-full block"
+                        style={{ aspectRatio: '3/4' }}
+                        draggable={false}
+                      />
+                    </motion.div>
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2 gap-3">
-                      <h3 id={`service-${s.id}-title`} className="text-lg sm:text-xl font-semibold text-amber-900 truncate">
+                    <motion.div 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="flex items-start justify-between mb-1 gap-2"
+                    >
+                      <h3 id={`service-${s.id}-title`} className="text-sm sm:text-base font-semibold text-amber-900 truncate">
                         {s.title}
                       </h3>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-amber-700 font-bold bg-amber-50 px-3 py-1 rounded-full border border-amber-200">{s.price}</span>
+                        <motion.span 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                          className="text-xs text-amber-700 font-bold bg-amber-50 px-2 py-1 rounded-full border border-amber-200"
+                        >
+                          {s.price}
+                        </motion.span>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-3">{s.description}</p>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-[12px] sm:text-sm text-gray-700 leading-relaxed mb-2 line-clamp-3"
+                    >
+                      {s.description}
+                    </motion.p>
 
-                    <ul className="flex flex-wrap gap-2 mb-4" aria-label={`${s.title} features`}>
+                    <motion.ul 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex flex-wrap gap-2 mb-3"
+                      aria-label={`${s.title} features`}
+                    >
                       {s.features.map((f, i) => (
-                        <li key={i} className="flex items-center gap-2 text-[11px] bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-amber-800">
-                          <CheckCircle2 size={12} className="text-amber-600" />
-                          <span className="truncate max-w-[10rem]">{f}</span>
-                        </li>
+                        <motion.li 
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.4 + i * 0.05 }}
+                          className="flex items-center gap-2 text-[11px] bg-amber-50 border border-amber-200 rounded-full px-2 py-1 text-amber-800"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <CheckCircle2 size={12} className="text-amber-600 flex-shrink-0" />
+                          <span className="truncate max-w-[8rem]">{f}</span>
+                        </motion.li>
                       ))}
-                    </ul>
+                    </motion.ul>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                      <a
-                        href={s.ctaLink}
-                        className="inline-flex items-center justify-center text-sm bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-semibold shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
-                        aria-label={s.ctaText}
-                      >
-                        {s.ctaText}
-                      </a>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+                    >
+                      {/* Primary CTA */}
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Link
+                          href={s.ctaLink}
+                          className="w-full sm:w-auto inline-flex items-center justify-center text-sm bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-semibold shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300 text-center"
+                        >
+                          {s.ctaText}
+                        </Link>
+                      </motion.div>
 
-                      <Link
-                        href="/gallery"
-                        className="inline-flex items-center justify-center text-sm text-amber-700 hover:text-amber-800 underline decoration-amber-400 underline-offset-4 transition-colors px-3 py-2 rounded-full bg-white/0 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                        aria-label={`View gallery for ${s.title}`}
-                      >
-                        View Gallery
-                      </Link>
-                    </div>
+                      {/* Secondary Link */}
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Link
+                          href="/gallery"
+                          className="w-full sm:w-auto inline-flex items-center justify-center text-sm text-amber-700 hover:text-amber-800 underline decoration-amber-400 underline-offset-4 transition-colors px-3 py-2 rounded-full bg-white/0 text-center"
+                        >
+                          View Gallery
+                        </Link>
+                      </motion.div>
+                    </motion.div>
                   </div>
-                </article>
+                </motion.article>
               ))}
-            </div>
+            </motion.div>
           </section>
 
-          {/* Course section */}
-          <section aria-labelledby="course-heading">
+          <motion.section 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            aria-labelledby="course-heading"
+          >
             <h2 id="course-heading" className="sr-only">Mehendi Mastery Course</h2>
 
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-amber-200 p-5 md:p-6">
-              <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+            <motion.div 
+              initial={{ scale: 0.98 }}
+              whileInView={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 p-4"
+            >
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col md:flex-row items-start justify-between gap-3 mb-4"
+              >
                 <div>
-                  <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 mb-2">
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, delay: 0.2 }}
+                    className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 mb-2"
+                  >
                     <Award className="text-amber-600" size={14} />
                     <span className="text-[10px] text-amber-800 font-medium uppercase tracking-wider">Certified Course</span>
-                  </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-amber-900 mb-1">Mehendi Mastery Course</h3>
-                  <p className="text-xs sm:text-sm text-gray-700 max-w-xl">Complete certification program from basics to bridal expertise with hands-on practice and mentorship.</p>
+                  </motion.div>
+                  <h3 className="text-lg sm:text-xl font-bold text-amber-900 mb-1">Mehendi Mastery Course</h3>
+                  <p className="text-[12px] sm:text-sm text-gray-700 max-w-xl">Complete certification program from basics to bridal expertise with hands-on practice and mentorship.</p>
                 </div>
 
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="mt-2 md:mt-0 w-full md:w-52"
+                >
+                  <button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-bold shadow-sm">
+                    Enroll Now
+                  </button>
+                </motion.div>
+              </motion.div>
 
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"
+              >
                 {courseModules.map((m, idx) => (
-                  <div key={idx} className="group bg-amber-50 border border-amber-200 rounded-2xl p-3 hover:bg-amber-100 hover:border-amber-300 transition-all">
+                  <motion.div 
+                    key={idx}
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    className="group bg-amber-50 border border-amber-200 rounded-xl p-3 hover:bg-amber-100 hover:border-amber-300 transition-all"
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">{idx + 1}</div>
+                      <motion.div 
+                        className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm"
+                        initial={{ rotate: 0 }}
+                        whileHover={{ rotate: 360 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        {idx + 1}
+                      </motion.div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <div className="text-sm font-semibold text-amber-900">{m.title}</div>
@@ -472,56 +583,56 @@ export default function ServicesPage(): React.ReactElement {
                         <div className="text-xs text-gray-700">{m.description}</div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="text-amber-600" size={16} />
+              <motion.div 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="text-amber-600" size={14} />
                   <span className="text-sm font-semibold text-amber-800">Course Benefits</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
-                    <span className="text-xs text-gray-700">Official Certificate</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
-                    <span className="text-xs text-gray-700">Portfolio Review</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
-                    <span className="text-xs text-gray-700">Lifetime Support</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
-                    <span className="text-xs text-gray-700">Practice Kits</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/contact" className="flex-1">
-                  <button className="w-full text-center bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-5 py-3 rounded-full font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-300">
-                    <Users size={16} />
-                    Enroll Now
-                  </button>
-                </Link>
-               
-              </div>
-            </div>
-          </section>
-        </div>
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                >
+                  {[
+                    'Official Certificate',
+                    'Portfolio Review',
+                    'Lifetime Support',
+                    'Practice Kits'
+                  ].map((benefit, idx) => (
+                    <motion.div 
+                      key={idx}
+                      variants={itemVariants}
+                      whileHover={{ x: 5 }}
+                      className="flex items-start gap-2"
+                    >
+                      <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
+                      <span className="text-xs text-gray-700">{benefit}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.section>
+        </motion.div>
 
         <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">
-          <div className="absolute top-24 left-6 w-48 h-48 bg-amber-400 rounded-full blur-3xl" />
-          <div className="absolute bottom-16 right-6 w-72 h-72 bg-orange-400 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-6 w-40 h-40 bg-amber-400 rounded-full blur-3xl" />
+          <div className="absolute bottom-12 right-6 w-56 h-56 bg-orange-400 rounded-full blur-3xl" />
         </div>
       </main>
 
-      {/* Modal */}
       {modalOpen && modalSrc && (
         <div
           className="fixed inset-0 flex items-center justify-center image-modal-backdrop"
@@ -531,14 +642,14 @@ export default function ServicesPage(): React.ReactElement {
             if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <div style={{ width: '100%', height: '100%', padding: 24, boxSizing: 'border-box' }} className="relative flex items-center justify-center">
-            <button onClick={closeModal} aria-label="Close image" className="absolute top-6 right-6 z-50 bg-white/90 hover:bg-white px-3 py-2 rounded-full shadow">
+          <div className="relative w-full h-full max-w-full max-h-full p-4 box-border flex items-center justify-center">
+            <button onClick={closeModal} aria-label="Close image" className="absolute top-safe right-safe z-50 bg-white/95 hover:bg-white px-3 py-2 rounded-full shadow">
               Close
             </button>
 
             <div
               ref={imgWrapperRef}
-              className="image-modal-content"
+              className="image-modal-content rounded-md overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}

@@ -12,6 +12,26 @@ type ContactForm = {
   message: string;
 };
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
+
+const buttonHoverVariants = {
+  hover: { scale: 1.05 },
+  tap: { scale: 0.95 }
+};
+
 export default function Contact(): React.ReactElement {
   // keep hooks at top
   const [loading, setLoading] = useState(true); // show spinner like Services page
@@ -71,7 +91,11 @@ export default function Contact(): React.ReactElement {
   // If loading: show a centered spinner like ServicesPage
   if (loading) {
     return (
-      <div className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100"
+      >
         <div className="text-center">
           <div className="relative">
             <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-amber-600 mx-auto" />
@@ -79,34 +103,63 @@ export default function Contact(): React.ReactElement {
           </div>
           <p className="mt-6 text-base text-amber-800 font-medium">Preparing contact form...</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-hidden py-12">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm mx-auto">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <motion.div 
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm mx-auto"
+          >
             <Sparkles className="text-amber-600" size={16} />
             <span className="text-xs text-amber-800 font-medium">Get in touch</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight">Contact Us</h1>
-          <p className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto mt-2">
+          </motion.div>
+          <motion.h1 
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight"
+          >
+            Contact Us
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto mt-2"
+          >
             Tell us your requirements and we'll reach out to plan your mehendi session.
-          </p>
-        </header>
+          </motion.p>
+        </motion.header>
 
         {!submitted ? (
           <motion.form
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
             onSubmit={handleSubmit}
             className="space-y-4 sm:space-y-6 bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6 sm:p-8 border border-amber-200"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
           >
-            <div>
+            <motion.div variants={itemVariants}>
               <label className="block text-amber-900 font-semibold mb-2 text-sm sm:text-base">Name *</label>
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.02 }}
                 type="text"
                 placeholder="Your full name"
                 value={formData.name}
@@ -114,11 +167,12 @@ export default function Contact(): React.ReactElement {
                 required
                 className="w-full p-3 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none text-amber-900 placeholder:text-amber-500 text-sm sm:text-base"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div variants={itemVariants}>
               <label className="block text-amber-900 font-semibold mb-2 text-sm sm:text-base">Email or Phone *</label>
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.02 }}
                 type="text"
                 placeholder="Email address or phone number"
                 value={formData.emailOrPhone}
@@ -126,11 +180,12 @@ export default function Contact(): React.ReactElement {
                 required
                 className="w-full p-3 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none text-amber-900 placeholder:text-amber-500 text-sm sm:text-base"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div variants={itemVariants}>
               <label className="block text-amber-900 font-semibold mb-2 text-sm sm:text-base">Occasion *</label>
-              <select
+              <motion.select
+                whileFocus={{ scale: 1.02 }}
                 value={formData.occasion}
                 onChange={handleChange('occasion')}
                 required
@@ -141,12 +196,13 @@ export default function Contact(): React.ReactElement {
                 <option value="engagement">Engagement</option>
                 <option value="babyshower">Baby Shower</option>
                 <option value="sider">Sider</option>
-              </select>
-            </div>
+              </motion.select>
+            </motion.div>
 
-            <div>
+            <motion.div variants={itemVariants}>
               <label className="block text-amber-900 font-semibold mb-2 text-sm sm:text-base">Preferred Date *</label>
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.02 }}
                 type="date"
                 value={formData.preferredDate}
                 onChange={handleChange('preferredDate')}
@@ -154,11 +210,12 @@ export default function Contact(): React.ReactElement {
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full p-3 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none text-amber-900 text-sm sm:text-base"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div variants={itemVariants}>
               <label className="block text-amber-900 font-semibold mb-2 text-sm sm:text-base">Message *</label>
-              <textarea
+              <motion.textarea
+                whileFocus={{ scale: 1.02 }}
                 placeholder="Tell us about your requirements..."
                 value={formData.message}
                 onChange={handleChange('message')}
@@ -166,41 +223,70 @@ export default function Contact(): React.ReactElement {
                 rows={4}
                 className="w-full p-3 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none text-amber-900 placeholder:text-amber-500 resize-none text-sm sm:text-base"
               />
-            </div>
+            </motion.div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm sm:text-base">
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm sm:text-base"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
+            <motion.div 
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-3"
+            >
+              <motion.button
+                variants={buttonHoverVariants}
+                whileHover="hover"
+                whileTap="tap"
                 type="submit"
                 disabled={submitting}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {submitting ? 'Submitting...' : 'Send Message'}
-              </button>
+              </motion.button>
 
-              <Link href="/services" className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-amber-200 hover:border-amber-300 bg-white hover:bg-amber-50 text-amber-800 rounded-full px-4 py-3 font-semibold transition-all text-sm sm:text-base">
-                Back to Services
-              </Link>
-            </div>
+              <motion.div variants={buttonHoverVariants} whileHover="hover" whileTap="tap">
+                <Link 
+                  href="/services" 
+                  className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-amber-200 hover:border-amber-300 bg-white hover:bg-amber-50 text-amber-800 rounded-full px-4 py-3 font-semibold transition-all text-sm sm:text-base"
+                >
+                  Back to Services
+                </Link>
+              </motion.div>
+            </motion.div>
           </motion.form>
         ) : (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
+            variants={containerVariants}
             className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6 sm:p-8 border border-amber-200 text-center"
           >
-            <p className="text-lg sm:text-xl text-amber-800 font-semibold">Thank you! We&apos;ll get back to you soon.</p>
-            <button onClick={() => setSubmitted(false)} className="mt-4 text-amber-700 hover:text-amber-900 underline text-sm sm:text-base">
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg sm:text-xl text-amber-800 font-semibold"
+            >
+              Thank you! We'll get back to you soon.
+            </motion.p>
+            <motion.button 
+              variants={buttonHoverVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={() => setSubmitted(false)} 
+              className="mt-4 text-amber-700 hover:text-amber-900 underline text-sm sm:text-base"
+            >
               Submit another inquiry
-            </button>
+            </motion.button>
           </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* decorative floats (kept outside container for layered look) */}
       <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">

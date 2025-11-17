@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,35 +21,42 @@ export default function Navbar() {
   const mobileItems = ['Home', 'Gallery', 'Services', 'About', 'Contact', 'Admin'];
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-[#8D6E63]/20 overflow-x-hidden">
+    <nav className="bg-white/95 backdrop-blur-sm shadow-lg fixed w-full z-50 top-0 border-b border-amber-200/50 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <div className="flex justify-between items-center h-14 sm:h-16">
           <div className="flex items-center min-w-0">
             <Link
               href="/"
-              className="text-xl sm:text-2xl font-bold text-[#3D2817] hover:text-[#6D4C41] transition-colors truncate"
+              className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-900 hover:text-amber-800 transition-colors truncate"
             >
+              <Sparkles className="text-amber-600" size={20} />
               Mahi Mehendi
             </Link>
           </div>
 
           {/* Desktop menu */}
           <div className="hidden md:flex space-x-4 lg:space-x-8 items-center">
-            {links.map(({ href, label }) => (
-              <Link
+            {links.map(({ href, label }, index) => (
+              <motion.div
                 key={href}
-                href={href}
-                className="text-[#6D4C41] hover:text-[#3D2817] font-medium transition-colors relative group text-sm lg:text-base whitespace-nowrap"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                {label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#6D4C41] group-hover:w-full transition-all duration-300"></span>
-              </Link>
+                <Link
+                  href={href}
+                  className="text-amber-700 hover:text-amber-900 font-medium transition-colors relative group text-sm lg:text-base whitespace-nowrap"
+                >
+                  {label}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+              </motion.div>
             ))}
           </div>
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden text-[#6D4C41] shrink-0 ml-2"
+            className="md:hidden text-amber-700 shrink-0 ml-2 hover:text-amber-900 transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Menu"
           >
@@ -63,17 +71,24 @@ export default function Navbar() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="md:hidden bg-white border-t border-[#8D6E63]/20"
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white/95 backdrop-blur-sm border-t border-amber-200/50"
           >
-            {mobileItems.map((item) => (
-              <Link
+            {mobileItems.map((item, index) => (
+              <motion.div
                 key={item}
-                href={`/${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`}
-                className="block px-4 py-2 text-[#6D4C41] hover:text-[#3D2817] hover:bg-[#FFF8F0] transition-colors font-medium"
-                onClick={() => setIsOpen(false)}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                {item}
-              </Link>
+                <Link
+                  href={`/${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`}
+                  className="block px-4 py-2 text-amber-700 hover:text-amber-900 hover:bg-amber-50 transition-colors font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item}
+                </Link>
+              </motion.div>
             ))}
           </motion.div>
         )}
