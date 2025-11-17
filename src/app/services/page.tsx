@@ -53,8 +53,8 @@ export default function ServicesPage(): React.ReactElement {
         image:
           'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
         alt: 'Bridal mehendi',
-        ctaText: 'Book Bridal',
-        ctaLink: '/booking?service=bridal',
+        ctaText: 'Book Now',
+        ctaLink: '/contact',
         price: 'From \u20B96,999'
       },
       {
@@ -66,8 +66,8 @@ export default function ServicesPage(): React.ReactElement {
         image:
           'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
         alt: 'Engagement mehendi',
-        ctaText: 'Reserve Slot',
-        ctaLink: '/booking?service=engagement',
+        ctaText: 'Book Now',
+        ctaLink: '/contact',
         price: 'From \u20B93,499'
       },
       {
@@ -79,8 +79,8 @@ export default function ServicesPage(): React.ReactElement {
         image:
           'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
         alt: 'Baby shower mehendi',
-        ctaText: 'Plan Event',
-        ctaLink: '/booking?service=babyshower',
+        ctaText: 'Book Now',
+        ctaLink: '/contact',
         price: 'Packages from \u20B91,199'
       },
       {
@@ -92,8 +92,8 @@ export default function ServicesPage(): React.ReactElement {
         image:
           'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
         alt: 'Sider mehendi',
-        ctaText: 'Book Sider',
-        ctaLink: '/booking?service=sider',
+        ctaText: 'Book Now',
+        ctaLink: 'contact',
         price: 'From \u20B9699'
       }
     ];
