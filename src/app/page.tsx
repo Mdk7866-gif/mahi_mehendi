@@ -82,7 +82,7 @@ export default function HomePage(): React.ReactElement {
         }
       `}</style>
 
-      <main className="min-h-screen bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-x-hidden">
+      <main className="min-h-screen bg-gradient-to-br mt-10 from-amber-100 via-orange-50 to-rose-100 relative overflow-x-hidden">
         {/* Hero Section */}
         <section className="hero-bg min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center text-center text-white py-12 sm:py-16 relative overflow-hidden">
           <motion.div
