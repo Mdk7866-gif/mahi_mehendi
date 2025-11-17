@@ -57,7 +57,7 @@ export default function Contact(): React.ReactElement {
       setSubmitting(false);
     }
   };
-
+  
   return (
     <div className="py-20 px-4 max-w-2xl mx-auto w-full">
       <motion.h1

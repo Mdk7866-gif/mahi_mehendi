@@ -1,292 +1,280 @@
 'use client';
-import React from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
 
-type Service = {
+import React, { useEffect, useState } from 'react';
+import { Sparkles, Clock, Users, Award, CheckCircle2 } from 'lucide-react';
+
+interface Service {
   id: string;
   title: string;
-  subtitle?: string;
   description: string;
-  starting?: string;
-};
+  features: string[];
+  image: string;
+  alt: string;
+  ctaText: string;
+  ctaLink: string;
+  price?: string;
+}
 
-type Course = {
-  id: string;
+interface CourseModule {
   title: string;
-  highlights: string[];
-  duration?: string;
-  priceRange?: string;
-};
-
-const SERVICES: Service[] = [
-  {
-    id: 'bridal',
-    title: 'Bridal Mehendi',
-    subtitle: 'Full bridal artistry',
-    description:
-      'Intricate, full-hand bridal designs tailored to your look — fusion, Indo-Arabic, traditional Rajasthani motifs and modern floral compositions.',
-    starting: 'From ₹2,500 (depends on design & travel)',
-  },
-  {
-    id: 'engagement',
-    title: 'Engagement / Pre-wedding Mehendi',
-    subtitle: 'Elegant event designs',
-    description:
-      'Beautiful engagement and pre-wedding mehendi styles — delicate wrists, palms and arms to match your outfit and jewellery.',
-    starting: 'From ₹1,200',
-  },
-  {
-    id: 'babyshower',
-    title: 'Baby Shower Mehendi',
-    subtitle: 'Soft & joyful motifs',
-    description:
-      'Cute, meaningful motifs and gentle patterns perfect for moms-to-be — flowers, baby icons and calm, pretty designs.',
-    starting: 'From ₹800',
-  },
-  {
-    id: 'sider',
-    title: 'Sider / Casual Mehendi',
-    subtitle: 'Quick & pretty',
-    description:
-      'Normal/daily mehendi or small-event designs — quick, pretty and affordable options for casual gatherings.',
-    starting: 'From ₹300',
-  },
-];
-
-const COURSES: Course[] = [
-  {
-    id: 'cone-making',
-    title: 'Cone Making & Tools',
-    highlights: ['How to prepare fresh cones', 'Consistency for smooth lines', 'Storage & hygiene'],
-    duration: '1 day (hands-on)',
-    priceRange: '₹500 - ₹1,000',
-  },
-  {
-    id: 'basic-mehendi',
-    title: 'Basic Mehendi',
-    highlights: ['Fundamental lines & dots', 'Simple floral motifs', 'Basic wrist & palm fills'],
-    duration: '2 days',
-    priceRange: '₹1,200 - ₹2,000',
-  },
-  {
-    id: 'designer-mehendi',
-    title: 'Designer Mehendi',
-    highlights: ['Modern compositions', 'Shading & negative space', 'Fusion styles & personalization'],
-    duration: '3 days',
-    priceRange: '₹2,500 - ₹4,000',
-  },
-  {
-    id: 'advanced-bridal',
-    title: 'Advanced Bridal Mehendi',
-    highlights: ['Full-hand bridal sets', 'Matching with jewelry & lehenga', 'Speed + precision techniques'],
-    duration: '4 days',
-    priceRange: '₹4,500 - ₹8,000',
-  },
-];
-
-const cardAnim = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } };
-
-function ServiceCard({ s }: { s: Service }) {
-  return (
-    <motion.article
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.15 }}
-      variants={{ hidden: cardAnim.hidden, show: cardAnim.show }}
-      transition={{ duration: 0.32 }}
-      className="bg-white rounded-xl p-5 shadow-sm border border-[#8D6E63]/10 hover:shadow-lg transition-shadow"
-      aria-labelledby={`service-${s.id}`}
-    >
-      <div className="flex items-start gap-4">
-        <div
-          className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FFF8F0] border border-[#8D6E63]/20 flex items-center justify-center text-xl font-bold text-[#6D4C41]"
-          aria-hidden
-        >
-          {s.title.split(' ')[0].charAt(0)}
-        </div>
-        <div className="flex-1">
-          <h3 id={`service-${s.id}`} className="text-lg font-semibold text-[#3D2817]">
-            {s.title}
-          </h3>
-          {s.subtitle && <p className="text-sm text-[#6D4C41] mt-1">{s.subtitle}</p>}
-          <p className="text-sm text-[#6D4C41] mt-3">{s.description}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-[#3D2817] font-bold">{s.starting}</div>
-        <Link href="/contact" className="ml-3">
-          <button className="text-sm bg-[#6D4C41] text-white py-1.5 px-3 rounded-full font-semibold hover:bg-[#3D2817] transition-colors">
-            Book Now
-          </button>
-        </Link>
-      </div>
-    </motion.article>
-  );
+  duration: string;
+  description: string;
 }
 
-function CourseCard({ c }: { c: Course }) {
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.15 }}
-      variants={{ hidden: cardAnim.hidden, show: cardAnim.show }}
-      transition={{ duration: 0.32 }}
-      className="bg-white rounded-xl p-5 border border-[#8D6E63]/10 shadow-sm"
-      role="region"
-      aria-labelledby={`course-${c.id}`}
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 id={`course-${c.id}`} className="text-lg font-semibold text-[#3D2817]">
-            {c.title}
-          </h3>
-          <div className="text-sm text-[#6D4C41] mt-1">
-            <span>{c.duration}</span>
-            {c.priceRange && <span className="ml-3">• {c.priceRange}</span>}
+export default function ServicesPage(): React.ReactElement {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const dummyServices: Service[] = [
+      {
+        id: 'bridal',
+        title: 'Bridal Mehendi',
+        description:
+          'Intricate bridal patterns for hands & feet — handcrafted with premium natural henna for long-lasting colour and beautiful details.',
+        features: ['Full hands & feet', 'Custom bridal motifs', 'Premium natural paste', 'Aftercare tips'],
+        image:
+          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
+        alt: 'Bridal mehendi',
+        ctaText: 'Book Bridal',
+        ctaLink: '/booking?service=bridal',
+        price: 'From \u20B96,999'
+      },
+      {
+        id: 'engagement',
+        title: 'Engagement Mehendi',
+        description:
+          'Romantic and elegant designs perfect for engagement ceremonies — fast application suitable for the event flow.',
+        features: ['Floral & romantic motifs', 'Quick application', 'Guest-friendly designs', 'Safe for pregnancy'],
+        image:
+          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
+        alt: 'Engagement mehendi',
+        ctaText: 'Reserve Slot',
+        ctaLink: '/booking?service=engagement',
+        price: 'From \u20B93,499'
+      },
+      {
+        id: 'babyshower',
+        title: 'Baby Shower & Sangeet Mehendi',
+        description:
+          'Playful, themed designs for baby showers and sangeet nights — group packages available to make the event fun and memorable.',
+        features: ['Group packages', 'Themed motifs', 'Quick sessions', 'Customization available'],
+        image:
+          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
+        alt: 'Baby shower mehendi',
+        ctaText: 'Plan Event',
+        ctaLink: '/booking?service=babyshower',
+        price: 'Packages from \u20B91,199'
+      },
+      {
+        id: 'sider',
+        title: 'Sider Mehendi',
+        description:
+          'Minimalist side-hand and wrist-focused designs — ideal for everyday style, office events, or when you want subtle elegance.',
+        features: ['Side-hand motifs', '30-45 min sessions', 'Minimal & modern', 'Long-lasting stain'],
+        image:
+          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
+        alt: 'Sider mehendi',
+        ctaText: 'Book Sider',
+        ctaLink: '/booking?service=sider',
+        price: 'From \u20B9699'
+      }
+    ];
+
+    const t = setTimeout(() => {
+      setServices(dummyServices);
+      setLoading(false);
+    }, 600);
+
+    return () => clearTimeout(t);
+  }, []);
+
+  const courseModules: CourseModule[] = [
+    { title: 'Cone Making', duration: '1 Session', description: 'Perfect henna cones for smooth lines.' },
+    { title: 'Basic Mehendi', duration: '2 Sessions', description: 'Foundational patterns and flow.' },
+    { title: 'Designer Mehendi', duration: '3 Sessions', description: 'Modern motifs and creative fillers.' },
+    { title: 'Advanced Bridal Mehendi', duration: '4 Sessions', description: 'Complex bridal layouts and timing.' }
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-amber-600 mx-auto" />
+            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-600 animate-pulse" size={32} />
           </div>
+          <p className="mt-6 text-base text-amber-800 font-medium">Crafting your Mehendi magic...</p>
         </div>
-
-        <div className="text-sm text-[#3D2817] font-semibold">Certificate</div>
       </div>
+    );
+  }
 
-      <ul className="mt-3 space-y-2 text-[#6D4C41] list-disc list-inside">
-        {c.highlights.map((h) => (
-          <li key={h}>{h}</li>
-        ))}
-      </ul>
-
-      <div className="mt-4 flex gap-3">
-        <Link href="/contact">
-          <button className="py-2 px-4 bg-[#6D4C41] text-white rounded-md font-semibold hover:bg-[#3D2817]">
-            Enroll Now
-          </button>
-        </Link>
-        <Link href="/contact">
-          <button className="py-2 px-4 border border-[#6D4C41] text-[#6D4C41] rounded-md font-semibold">
-            Ask a Question
-          </button>
-        </Link>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function ServicesPage() {
   return (
-    <div className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto w-full">
-      {/* HERO */}
-      <div className="bg-[#FFF8F0] rounded-2xl p-8 sm:p-12 shadow-md border border-[#8D6E63]/20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#3D2817] leading-tight">
-              Our Services & Courses
-            </h1>
-            <p className="mt-4 text-[#6D4C41] text-lg sm:text-xl max-w-xl">
-              Elegant mehendi services for every occasion — from intimate gatherings to full bridal sets.
-              Want to learn too? Join our practical, hands-on mehendi courses and get a certificate on completion.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/gallery" className="inline-block">
-                <motion.button whileHover={{ scale: 1.02 }} className="py-2 px-5 bg-[#6D4C41] text-white rounded-full font-semibold shadow-lg">
-                  Explore Gallery
-                </motion.button>
-              </Link>
-
-              <Link href="/contact" className="inline-block">
-                <motion.button whileHover={{ scale: 1.02 }} className="py-2 px-5 border-2 border-[#6D4C41] text-[#6D4C41] rounded-full font-semibold">
-                  Book a Service / Enroll
-                </motion.button>
-              </Link>
-            </div>
+    <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero */}
+        <header className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm mx-auto">
+            <Sparkles className="text-amber-600" size={16} />
+            <span className="text-xs text-amber-800 font-medium">Premium Mehendi Artistry</span>
           </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight">Our Services</h1>
+          <p className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto mt-2">Exquisite henna designs for every celebration — from intimate gatherings to grand weddings.</p>
+        </header>
 
-          <div className="flex justify-center md:justify-end">
-            <div className="w-full max-w-md p-6 rounded-xl bg-white shadow-lg border border-[#8D6E63]/10">
-              <div className="text-center">
-                <p className="text-sm text-[#6D4C41]">Featured</p>
-                <h3 className="mt-2 text-xl font-bold text-[#3D2817]">Bridal Spotlight</h3>
-                <p className="mt-2 text-sm text-[#6D4C41]">
-                  Hand-covered bridal sets, custom designs to match your outfit and jewellery.
-                </p>
-                <div className="mt-4">
-                  <Link href="/contact" className="inline-block">
-                    <button className="py-2 px-4 bg-[#3D2817] text-white rounded-md font-semibold shadow-sm">
-                      Request Bridal Quote
+        {/* Services grid */}
+        <section aria-labelledby="services-heading" className="mb-10">
+          <h2 id="services-heading" className="sr-only">Services</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {services.map((s, index) => (
+              <article
+                key={s.id}
+                className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-amber-200 p-4 md:p-5 hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row items-start gap-4"
+                aria-labelledby={`service-${s.id}-title`}
+                style={{ animationDelay: `${index * 70}ms` }}
+              >
+                <div className="relative flex-shrink-0 w-full md:w-40 h-[21rem] md:h-[17rem] rounded-2xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all">
+                  <img
+                    src={s.image}
+                    alt={s.alt}
+                    loading="lazy"
+                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-amber-900/10 to-transparent" aria-hidden />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2 gap-3">
+                    <h3 id={`service-${s.id}-title`} className="text-lg sm:text-xl font-semibold text-amber-900 truncate">
+                      {s.title}
+                    </h3>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-amber-700 font-bold bg-amber-50 px-3 py-1 rounded-full border border-amber-200">{s.price}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-3">{s.description}</p>
+
+                  <ul className="flex flex-wrap gap-2 mb-4" aria-label={`${s.title} features`}>
+                    {s.features.map((f, i) => (
+                      <li key={i} className="flex items-center gap-2 text-[11px] bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-amber-800">
+                        <CheckCircle2 size={12} className="text-amber-600" />
+                        <span className="truncate max-w-[10rem]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <a
+                      href={s.ctaLink}
+                      className="inline-flex items-center justify-center text-sm bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-semibold shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      aria-label={s.ctaText}
+                    >
+                      {s.ctaText}
+                    </a>
+
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center text-sm text-amber-700 hover:text-amber-800 underline decoration-amber-400 underline-offset-4 transition-colors px-3 py-2 rounded-full bg-white/0 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                      aria-label={`View gallery for ${s.title}`}
+                    >
+                      View Gallery
                     </button>
-                  </Link>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Course section */}
+        <section aria-labelledby="course-heading">
+          <h2 id="course-heading" className="sr-only">Mehendi Mastery Course</h2>
+
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-amber-200 p-5 md:p-6">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 mb-2">
+                  <Award className="text-amber-600" size={14} />
+                  <span className="text-[10px] text-amber-800 font-medium uppercase tracking-wider">Certified Course</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-amber-900 mb-1">Mehendi Mastery Course</h3>
+                <p className="text-xs sm:text-sm text-gray-700 max-w-xl">Complete certification program from basics to bridal expertise with hands-on practice and mentorship.</p>
+              </div>
+
+              <div className="text-right">
+                <div className="text-2xl sm:text-3xl font-bold text-amber-700">\u20B99,999</div>
+                <div className="text-[10px] text-gray-600">One-time fee</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {courseModules.map((m, idx) => (
+                <div key={idx} className="group bg-amber-50 border border-amber-200 rounded-2xl p-3 hover:bg-amber-100 hover:border-amber-300 transition-all">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">{idx + 1}</div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="text-sm font-semibold text-amber-900">{m.title}</div>
+                        <div className="flex items-center gap-1 text-[10px] text-amber-700 bg-white px-2 py-0.5 rounded-full border border-amber-200">
+                          <Clock size={12} />
+                          {m.duration}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-700">{m.description}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="text-amber-600" size={16} />
+                <span className="text-sm font-semibold text-amber-800">Course Benefits</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
+                  <span className="text-xs text-gray-700">Official Certificate</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
+                  <span className="text-xs text-gray-700">Portfolio Review</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
+                  <span className="text-xs text-gray-700">Lifetime Support</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
+                  <span className="text-xs text-gray-700">Practice Kits</span>
                 </div>
               </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button className="flex-1 text-center bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-5 py-3 rounded-full font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                <Users size={16} />
+                Enroll Now
+              </button>
+              <button className="flex-1 text-center border-2 border-amber-300 hover:border-amber-400 bg-white hover:bg-amber-50 text-amber-800 rounded-full px-5 py-3 font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-amber-200">
+                Learn More
+              </button>
+            </div>
           </div>
-        </div>
-      </div> {/* /hero */}
-
-      {/* SERVICES GRID */}
-      <section className="mt-10">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#3D2817] mb-4">Our Mehendi Services</h2>
-        <p className="text-[#6D4C41] mb-6 max-w-2xl">
-          We travel for events and provide on-site application. Every design is customized for the occasion — bridal, engagement, baby shower and everyday mehendi.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SERVICES.map((s) => (
-            <ServiceCard key={s.id} s={s} />
-          ))}
-        </div>
-      </section>
-
-      {/* COURSES */}
-      <section className="mt-14">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#3D2817] mb-4">Mehendi Courses (Hands-on)</h2>
-        <p className="text-[#6D4C41] mb-6 max-w-2xl">
-          Practical, small-group classes — we teach everything from making perfect cones to advanced bridal sets. Certificates provided on successful completion.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {COURSES.map((c) => (
-            <CourseCard key={c.id} c={c} />
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ / Notes */}
-      <section className="mt-14">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#3D2817] mb-4">Notes & FAQs</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-[#8D6E63]/10 shadow-sm">
-            <h4 className="font-semibold text-[#3D2817]">Do you travel for events?</h4>
-            <p className="mt-2 text-[#6D4C41]">Yes — travel charges may apply depending on location and team size. Contact us for details.</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-[#8D6E63]/10 shadow-sm">
-            <h4 className="font-semibold text-[#3D2817]">What about hygiene & natural cones?</h4>
-            <p className="mt-2 text-[#6D4C41]">We use fresh cones, natural henna paste, and follow hygienic practices. Students learn cone-making in our course.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <div className="mt-12 text-center">
-        <p className="text-[#6D4C41] mb-4">Ready to book or learn?</p>
-        <div className="flex justify-center gap-4">
-          <Link href="/contact">
-            <button className="py-3 px-6 bg-[#6D4C41] text-white rounded-full font-semibold shadow-lg hover:bg-[#3D2817] transition">
-              Book a Service
-            </button>
-          </Link>
-          <Link href="/contact">
-            <button className="py-3 px-6 border border-[#6D4C41] text-[#6D4C41] rounded-full font-semibold">
-              Enroll in a Course
-            </button>
-          </Link>
-        </div>
-        <p className="text-sm text-[#6D4C41] mt-4">Prefer a custom design or group booking? Message us on Contact page and we will get back quickly.</p>
+        </section>
       </div>
 
-      <div className="h-24" />
-    </div>
+      {/* decorative floats (kept outside container for layered look) */}
+      <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">
+        <div className="absolute top-24 left-6 w-48 h-48 bg-amber-400 rounded-full blur-3xl" />
+        <div className="absolute bottom-16 right-6 w-72 h-72 bg-orange-400 rounded-full blur-3xl" />
+      </div>
+    </main>
   );
 }
