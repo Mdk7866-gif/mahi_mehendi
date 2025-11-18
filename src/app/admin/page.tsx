@@ -246,6 +246,51 @@ export default function Admin(): React.ReactElement {
           <motion.h1 initial={{ scale: 0.98 }} animate={{ scale: 1 }} className="text-2xl sm:text-3xl font-extrabold text-amber-900 mt-3">Manage Gallery</motion.h1>
         </motion.header>
 
+{/* === Certificate Generation Button – Fully Matches Your Design === */}
+<motion.div
+  initial={{ opacity: 0, y: 12 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.4 }}
+  className="mb-8"
+>
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => window.location.href = '/admin/certificategeneration'}
+    className="group relative w-full bg-white/95 backdrop-blur-sm border-2 border-amber-200 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:border-amber-300 hover:shadow-xl"
+  >
+    {/* Gradient overlay on hover */}
+    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+    <div className="relative px-8 py-6 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-gradient-to-br from-amber-500 to-pink-500 rounded-xl shadow-md">
+          <Sparkles className="w-7 h-7 text-white" />
+        </div>
+
+        <div className="text-left">
+          <h3 className="text-xl font-bold text-amber-900">
+            Issue Certificate to Student
+          </h3>
+          <p className="text-amber-700 text-sm mt-1">
+            Generate beautiful digital certificates for your Mehendi course graduates ✨
+          </p>
+        </div>
+      </div>
+
+      {/* Arrow */}
+      <div className="ml-4 flex-shrink-0">
+        <div className="p-2 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
+          <svg className="w-6 h-6 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </motion.button>
+</motion.div>
+{/* === END === */}
+
         {/* UPLOAD FORM */}
         <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white/95 backdrop-blur-sm p-5 sm:p-6 rounded-2xl shadow-sm border border-amber-200 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
