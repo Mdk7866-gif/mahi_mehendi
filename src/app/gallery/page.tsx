@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, ImageIcon } from 'lucide-react';
 import GalleryCardPopUp from '@/components/GalleryCardPopUp';
 
 interface ImageType {
@@ -12,256 +12,144 @@ interface ImageType {
   price: number;
 }
 
-const categories = ['bridal', 'engagement', 'babyshower', 'sider'] as const;
+const categories = [
+  { id: 'bridal', label: 'Bridal', icon: '👰' },
+  { id: 'engagement', label: 'Engagement', icon: '💍' },
+  { id: 'babyshower', label: 'Baby Shower', icon: '🍼' },
+  { id: 'sider', label: 'Sider', icon: '✨' }
+] as const;
 
+// keep animations subtle
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.1
-    }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
 };
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45 } }
+  hidden: { opacity: 0, y: 10, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.32 } }
 };
 
-const cardHoverVariants = {
-  hover: { scale: 1.02, transition: { duration: 0.2 } }
-};
-
-// Helper function to get optimized Cloudinary image URL
-function getOptimizedImageUrl(url: string, width: number): string {
-  // If it's already a Cloudinary URL, add transformation
-  if (url.includes('cloudinary.com')) {
-    // Check if URL already has transformations (contains /upload/v or /upload/c or /upload/w etc)
-    if (url.includes('/upload/')) {
-      const uploadIndex = url.indexOf('/upload/');
-      const afterUpload = url.substring(uploadIndex + 8); // +8 for '/upload/'
-      
-      // Check if transformations already exist (starts with v, c, w, etc.)
-      const hasTransformations = /^[vcwqfl]/i.test(afterUpload);
-      
-      if (!hasTransformations) {
-        // No transformations exist, add them
-        return url.replace('/upload/', `/upload/w_${width},q_auto:good,f_auto/`);
-      } else {
-        // Transformations exist, replace or append width if needed
-        // For simplicity, just ensure quality and format are set
-        if (!url.includes('q_auto') && !url.includes('q_')) {
-          return url.replace('/upload/', `/upload/q_auto:good,f_auto/`);
-        }
-      }
+function getOptimizedImageUrl(url: string, width: number) {
+  if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+    const prefix = url.split('/upload/')[0];
+    const rest = url.split('/upload/')[1];
+    if (!/q_auto|f_auto|w_/.test(rest)) {
+      return `${prefix}/upload/w_${width},q_auto:good,f_auto/${rest}`;
     }
   }
   return url;
 }
 
-export default function Gallery() {
+export default function Gallery(): React.ReactElement {
   const [images, setImages] = useState<ImageType[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ImageType['category']>('bridal');
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null);
+  const [loaded, setLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch('/api/images')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        // Ensure data is an array
-        const imagesArray = Array.isArray(data) ? data : [];
-        console.log('Fetched images:', imagesArray.length);
-        console.log('Image categories:', imagesArray.map((img: ImageType) => img.category));
-        setImages(imagesArray);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Fetch error:', err);
-        setImages([]);
-        setLoading(false);
-      });
+      .then((r) => r.json())
+      .then((data) => setImages(Array.isArray(data) ? data : []))
+      .catch(() => setImages([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Use useMemo to ensure filtered images update correctly
-  const filteredImages = useMemo(() => {
-    const filtered = images.filter((img) => {
-      // Case-insensitive comparison and trim whitespace
-      const imgCategory = String(img.category || '').toLowerCase().trim();
-      const selectedCat = String(selectedCategory || '').toLowerCase().trim();
-      return imgCategory === selectedCat;
-    });
-    console.log(`Filtering: ${images.length} total images, ${filtered.length} for category "${selectedCategory}"`);
-    return filtered;
-  }, [images, selectedCategory]);
+  const filtered = useMemo(() => images.filter(i => i.category === selectedCategory), [images, selectedCategory]);
 
-  // Debug: Log filtered images when category changes
-  useEffect(() => {
-    console.log(`Category changed to: ${selectedCategory}`);
-    console.log(`Total images: ${images.length}`);
-    console.log(`Filtered images for ${selectedCategory}:`, filteredImages.length);
-    console.log('All images categories:', images.map(img => img.category));
-    console.log('Filtered images:', filteredImages.map(img => ({ id: img._id, category: img.category })));
-  }, [selectedCategory, images, filteredImages]);
-
-  const handleImageClick = (img: ImageType) => {
-    console.log('Image clicked:', img._id);
-    setSelectedImage(img);
-  };
-
-  const closeModal = () => {
-    setSelectedImage(null);
-  };
-
-  if (loading)
+  if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100"
-      >
+      <div className="min-h-screen mt-12 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
         <div className="text-center p-6">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-600 mx-auto" />
-            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-600 animate-pulse" size={28} />
+            <div className="animate-spin rounded-full h-14 w-14 border-b-4 border-amber-600 mx-auto" />
+            <Sparkles className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-600" size={24} />
           </div>
-          <p className="mt-4 text-sm text-amber-800 font-medium">Loading gallery...</p>
+          <p className="mt-4 text-sm text-amber-800">Loading gallery...</p>
         </div>
-      </motion.div>
+      </div>
     );
+  }
 
   return (
-    <>
-      <style>{`
-        .gallery-card { overflow: hidden; }
-        .gallery-image { transition: transform 0.3s ease; }
-        .group:hover .gallery-image { transform: scale(1.05); }
-      `}</style>
+    <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-200 rounded-full px-4 py-2 shadow-sm mx-auto">
+            <ImageIcon className="text-amber-600" size={16} />
+            <span className="text-sm text-amber-800 font-medium">Our Designs</span>
+          </div>
 
-      <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-x-hidden">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-        >
-          <motion.header 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-6"
-          >
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-3 shadow-sm mx-auto">
-              <Sparkles className="text-amber-600" size={14} />
-              <span className="text-xs text-amber-800 font-medium">Our Designs</span>
-            </div>
-            <motion.h1 
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-900 leading-tight"
+          <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold text-amber-900">Gallery</h1>
+          <p className="mt-2 text-amber-700 text-sm sm:text-base max-w-2xl mx-auto">Explore our curated Mehendi designs across occasions.</p>
+        </header>
+
+        {/* filters */}
+        <div className="flex justify-center gap-3 mb-6 flex-wrap">
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategory === cat.id ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow' : 'bg-white/90 border border-amber-200 text-amber-800'}`}
             >
-              Gallery
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-amber-700 text-xs sm:text-sm max-w-xl mx-auto mt-2"
-            >
-              Explore our exquisite collection of Mehendi designs across various occasions.
-            </motion.p>
-          </motion.header>
-
-          {/* Category Filters */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center items-center gap-3 mb-8 flex-wrap"
-          >
-            {categories.map((cat) => (
-              <motion.button
-                key={cat}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full font-semibold transition-all text-sm ${
-                  selectedCategory === cat
-                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg'
-                    : 'bg-white/80 backdrop-blur-sm text-amber-700 border-2 border-amber-200 hover:bg-amber-50 hover:border-amber-300'
-                }`}
-              >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)} Mehendi
-              </motion.button>
-            ))}
-          </motion.div>
-
-          {/* Gallery Grid */}
-          <motion.div 
-            key={`gallery-${selectedCategory}`}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-          >
-            {filteredImages.map((img) => (
-              <motion.div
-                key={`${img._id}-${selectedCategory}`}
-                variants={itemVariants}
-                whileHover={cardHoverVariants}
-                className="gallery-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 overflow-hidden cursor-pointer"
-                onClick={() => handleImageClick(img)}
-              >
-                <div className="relative h-[22rem] sm:h-[26rem] md:h-[29rem] lg:h-[32rem] bg-amber-50 gallery-image">
-                  <Image
-                    src={getOptimizedImageUrl(img.url, 800)}
-                    alt="Mehendi Design"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    draggable={false}
-                    loading="lazy"
-                    quality={85}
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  />
-                </div>
-
-                <div className="p-3 text-center bg-amber-50">
-                  <p className="text-lg font-bold text-amber-900">₹{img.price}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {filteredImages.length === 0 && !loading && (
-            <motion.p 
-              key={`empty-${selectedCategory}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-amber-700 mt-8 text-lg"
-            >
-              No {selectedCategory} mehendi images available yet. Upload via Admin!
-            </motion.p>
-          )}
-        </motion.div>
-
-        <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">
-          <div className="absolute top-20 left-6 w-40 h-40 bg-amber-400 rounded-full blur-3xl" />
-          <div className="absolute bottom-12 right-6 w-56 h-56 bg-orange-400 rounded-full blur-3xl" />
+              {cat.icon} {cat.label}
+            </button>
+          ))}
         </div>
 
-        {/* Popup Modal */}
-        <GalleryCardPopUp selectedImage={selectedImage} onClose={closeModal} />
-      </main>
-    </>
+        {/* grid: compact cards like Admin */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="inline-block mb-4 bg-amber-100 p-6 rounded-full">
+              <ImageIcon size={40} className="text-amber-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-amber-900">No designs yet</h3>
+            <p className="text-amber-700 text-sm mt-2">No {selectedCategory} images available — check back soon.</p>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div key={selectedCategory} variants={containerVariants} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {filtered.map((img, i) => (
+                <motion.div key={img._id} variants={itemVariants} whileHover={{ scale: 1.02 }} className="group bg-white/95 rounded-2xl shadow-sm border border-amber-200 overflow-hidden cursor-pointer">
+
+                  {/* compact image height (like Admin) */}
+                  <div className="relative h-44 sm:h-40 bg-amber-50" onClick={() => setSelectedImage(img)}>
+                    {!loaded[img._id] && <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100" />}
+
+                    <Image
+                      src={getOptimizedImageUrl(img.url, 800)}
+                      alt={`${img.category} mehendi`}
+                      fill
+                      className={`object-cover transition-transform duration-500 group-hover:scale-110 ${loaded[img._id] ? 'opacity-100' : 'opacity-0'}`}
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      onLoad={() => setLoaded(prev => ({ ...prev, [img._id]: true }))}
+                    />
+                  </div>
+
+                  <div className="p-3 bg-amber-50 flex items-center justify-between">
+                    <div className="text-sm text-amber-700 capitalize">{img.category}</div>
+                    <div className="text-amber-900 font-bold">₹{img.price}</div>
+                  </div>
+
+                  <div className="p-3 bg-white border-t border-amber-100 flex items-center justify-end gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedImage(img); }} className="px-2 py-1 rounded-md bg-amber-600 text-white text-xs font-semibold">View</button>
+                    <a href={`/contact`} className="px-2 py-1 rounded-md bg-white border border-amber-200 text-amber-800 text-xs font-semibold">Book</a>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+
+      </div>
+
+      {/* background decor (subtle) */}
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-8">
+        <div className="absolute top-24 left-8 w-48 h-48 bg-amber-400 rounded-full blur-3xl" />
+        <div className="absolute bottom-16 right-8 w-72 h-72 bg-orange-400 rounded-full blur-3xl" />
+      </div>
+
+      <GalleryCardPopUp selectedImage={selectedImage} onClose={() => setSelectedImage(null)} />
+    </main>
   );
 }
