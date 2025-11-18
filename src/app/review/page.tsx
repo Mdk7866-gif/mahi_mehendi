@@ -21,21 +21,30 @@ export default function ReviewPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchCertificates = async () => {
       try {
-        const res = await fetch('/api/certificates');
+        const res = await fetch('/api/certificates', {
+          signal: controller.signal,
+          cache: 'force-cache', // Use browser cache when available
+        });
         if (!res.ok) throw new Error('Failed to fetch certificates');
         const data = await res.json();
         setCertificates(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load certificates');
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error('Error:', err);
+          setError(err.message || 'Failed to load certificates');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchCertificates();
+    
+    return () => controller.abort();
   }, []);
 
   // Generate preview image URL from PDF URL using Cloudinary transformation
@@ -109,6 +118,8 @@ export default function ReviewPage() {
                           width={400}
                           height={256}
                           className="w-full h-full object-contain"
+                          loading="lazy"
+                          quality={75}
                           onError={(e) => {
                             // Fallback to PDF icon if preview fails
                             (e.target as HTMLImageElement).style.display = 'none';

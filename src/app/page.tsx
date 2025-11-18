@@ -22,10 +22,9 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 } // removed 'ease' string to satisfy TS
+    transition: { duration: 0.5 }
   }
 };
-
 
 const heroVariants = {
   hidden: { opacity: 0 },
@@ -82,10 +81,53 @@ interface Service {
   price?: string;
 }
 
+/* --------------------------
+   DUMMY SERVICES (moved out)
+   -------------------------- */
+const DUMMY_SERVICES: Service[] = [
+  {
+    id: 'bridal',
+    title: 'Bridal Mehendi',
+    description: 'Intricate bridal patterns for hands & feet — handcrafted with premium natural henna for long-lasting colour and beautiful details.',
+    features: ['Full hands & feet', 'Custom bridal motifs', 'Premium natural paste', 'Aftercare tips'],
+    image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
+    alt: 'Bridal mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹6,999'
+  },
+  {
+    id: 'engagement',
+    title: 'Engagement Mehendi',
+    description: 'Romantic and elegant designs perfect for engagement ceremonies — fast application suitable for the event flow.',
+    features: ['Floral & romantic motifs', 'Quick application', 'Guest-friendly designs', 'Safe for pregnancy'],
+    image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
+    alt: 'Engagement mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹3,499'
+  },
+  {
+    id: 'babyshower',
+    title: 'Baby Shower & Sangeet',
+    description: 'Playful, themed designs for baby showers and sangeet nights — group packages available.',
+    features: ['Group packages', 'Themed motifs', 'Quick sessions', 'Customization available'],
+    image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
+    alt: 'Baby shower mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹1,199'
+  }
+];
+
 export default function HomePage(): React.ReactElement {
-  const [loading, setLoading] = useState(true);
+  // Initialize services directly to avoid setting state in an effect (fixes ESLint rule).
+  const [services] = useState<Service[]>(() => DUMMY_SERVICES);
+
+  // Keep a short simulated loading to show spinner UX if desired
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
-  const [services, setServices] = useState<Service[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
   const [imageScale, setImageScale] = useState(1);
@@ -96,48 +138,9 @@ export default function HomePage(): React.ReactElement {
   const isPanningRef = useRef<boolean>(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Simulated small loading delay for polished UX — change or remove if not needed
   useEffect(() => {
-    const dummyServices: Service[] = [
-      {
-        id: 'bridal',
-        title: 'Bridal Mehendi',
-        description: 'Intricate bridal patterns for hands & feet — handcrafted with premium natural henna for long-lasting colour and beautiful details.',
-        features: ['Full hands & feet', 'Custom bridal motifs', 'Premium natural paste', 'Aftercare tips'],
-        image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
-        alt: 'Bridal mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹6,999'
-      },
-      {
-        id: 'engagement',
-        title: 'Engagement Mehendi',
-        description: 'Romantic and elegant designs perfect for engagement ceremonies — fast application suitable for the event flow.',
-        features: ['Floral & romantic motifs', 'Quick application', 'Guest-friendly designs', 'Safe for pregnancy'],
-        image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
-        alt: 'Engagement mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹3,499'
-      },
-      {
-        id: 'babyshower',
-        title: 'Baby Shower & Sangeet',
-        description: 'Playful, themed designs for baby showers and sangeet nights — group packages available.',
-        features: ['Group packages', 'Themed motifs', 'Quick sessions', 'Customization available'],
-        image: 'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
-        alt: 'Baby shower mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹1,199'
-      }
-    ];
-
-    const t = setTimeout(() => {
-      setServices(dummyServices);
-      setLoading(false);
-    }, 500);
-
+    const t = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(t);
   }, []);
 
@@ -215,25 +218,24 @@ export default function HomePage(): React.ReactElement {
     lastMouseRef.current = null;
   };
 
- // Touch panning (basic)
-const onTouchStart = (e: React.TouchEvent) => {
-  if (e.touches.length === 1) {
+  // Touch panning (basic)
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      lastTouchRef.current = { x: t.clientX, y: t.clientY };
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!lastTouchRef.current || e.touches.length !== 1) return;
     const t = e.touches[0];
+    const dx = t.clientX - lastTouchRef.current.x;
+    const dy = t.clientY - lastTouchRef.current.y;
     lastTouchRef.current = { x: t.clientX, y: t.clientY };
-  }
-};
-
-const onTouchMove = (e: React.TouchEvent) => {
-  if (!lastTouchRef.current || e.touches.length !== 1) return;
-  const t = e.touches[0];
-  const dx = t.clientX - lastTouchRef.current.x;
-  const dy = t.clientY - lastTouchRef.current.y;
-  lastTouchRef.current = { x: t.clientX, y: t.clientY };
-  transformRef.current.tx += dx;
-  transformRef.current.ty += dy;
-  applyTransform();
-};
-
+    transformRef.current.tx += dx;
+    transformRef.current.ty += dy;
+    applyTransform();
+  };
 
   if (loading) {
     return (
@@ -268,8 +270,9 @@ const onTouchMove = (e: React.TouchEvent) => {
               alt={currentBg.title}
               fill
               className="object-cover"
-              priority
-              quality={90}
+              priority={currentBgIndex === 0}
+              quality={85}
+              loading={currentBgIndex === 0 ? undefined : 'lazy'}
             />
             <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70" />
           </motion.div>
@@ -316,6 +319,7 @@ const onTouchMove = (e: React.TouchEvent) => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/services"
+                prefetch={true}
                 className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-full font-bold text-base sm:text-lg shadow-2xl transition-all"
               >
                 Explore Services
@@ -326,6 +330,7 @@ const onTouchMove = (e: React.TouchEvent) => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/gallery"
+                prefetch={true}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-white/80 backdrop-blur-md bg-white/10 text-white hover:bg-white hover:text-amber-900 rounded-full font-bold text-base sm:text-lg transition-all"
               >
                 View Gallery
@@ -424,6 +429,8 @@ const onTouchMove = (e: React.TouchEvent) => {
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    loading="lazy"
+                    quality={80}
                   />
                   
                   {/* Overlay */}
@@ -458,6 +465,7 @@ const onTouchMove = (e: React.TouchEvent) => {
                   <div className="flex gap-3">
                     <Link
                       href={service.ctaLink}
+                      prefetch={true}
                       className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2.5 rounded-full font-semibold text-sm transition-all"
                     >
                       {service.ctaText}
@@ -465,6 +473,7 @@ const onTouchMove = (e: React.TouchEvent) => {
                     </Link>
                     <Link
                       href="/gallery"
+                      prefetch={true}
                       className="px-4 py-2.5 border-2 border-amber-300 hover:bg-amber-50 text-amber-700 rounded-full font-semibold text-sm transition-all"
                     >
                       Gallery
@@ -483,6 +492,7 @@ const onTouchMove = (e: React.TouchEvent) => {
           >
             <Link
               href="/services"
+              prefetch={true}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-4 rounded-full font-bold text-base shadow-lg hover:shadow-xl transition-all"
             >
               View All Services
@@ -579,6 +589,8 @@ const onTouchMove = (e: React.TouchEvent) => {
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  loading="lazy"
+                  quality={75}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -596,6 +608,7 @@ const onTouchMove = (e: React.TouchEvent) => {
           >
             <Link
               href="/gallery"
+              prefetch={true}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-4 rounded-full font-bold text-base shadow-lg hover:shadow-xl transition-all"
             >
               View Full Gallery
@@ -649,6 +662,7 @@ const onTouchMove = (e: React.TouchEvent) => {
 
               <Link
                 href="/about"
+                prefetch={true}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-4 rounded-full font-bold text-base shadow-lg hover:shadow-xl transition-all"
               >
                 Learn More About Us
@@ -681,7 +695,7 @@ const onTouchMove = (e: React.TouchEvent) => {
         />
       </div>
 
-      {/* Image Modal (uses modalSrc, imageScale, lastTouchRef, isPanningRef, lastMouseRef) */}
+      {/* Image Modal */}
       <AnimatePresence>
         {modalOpen && modalSrc && (
           <motion.div

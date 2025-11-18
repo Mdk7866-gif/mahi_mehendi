@@ -25,10 +25,11 @@ function getOptimizedImageUrl(url: string, width: number): string {
       const hasTransformations = /^[vcwqfl]/i.test(afterUpload);
       
       if (!hasTransformations) {
-        return url.replace('/upload/', `/upload/w_${width},q_auto:good,f_auto/`);
+        // Use optimized settings for modal view - higher quality but still optimized
+        return url.replace('/upload/', `/upload/w_${width},q_auto:best,f_auto,dpr_auto/`);
       } else {
         if (!url.includes('q_auto') && !url.includes('q_')) {
-          return url.replace('/upload/', `/upload/q_auto:good,f_auto/`);
+          return url.replace('/upload/', `/upload/q_auto:best,f_auto/`);
         }
       }
     }
@@ -332,7 +333,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
                     className="object-contain p-2 sm:p-4 md:p-8 select-none"
                     priority
                     sizes="95vw"
-                    quality={90}
+                    quality={85}
                     style={{ pointerEvents: 'none' }}
                   />
                 </motion.div>

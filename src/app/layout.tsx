@@ -5,7 +5,11 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap', // Better font loading performance
+  preload: true,
+});
 
 const siteUrl = "https://mahi-mehendi.vercel.app";
 const siteName = "Mahi Mehendi - Bridal Mehendi Artist Ahmedabad";

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Sparkles, Users, Award, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -27,15 +27,8 @@ const cardHoverVariants = {
 };
 
 export default function AboutPage(): React.ReactElement {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(t);
-  }, []);
+  // Initialize loading false to avoid calling setState synchronously inside an effect.
+  const loading = false;
 
   if (loading) {
     return (
@@ -162,7 +155,8 @@ export default function AboutPage(): React.ReactElement {
                     height={800}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 520px"
                     style={{ objectFit: 'cover', width: '100%', height: '100%', aspectRatio: '1/1' }}
-                    priority={false}
+                    loading="lazy"
+                    quality={80}
                   />
                 </motion.div>
               </div>
@@ -255,12 +249,14 @@ export default function AboutPage(): React.ReactElement {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/services"
+                  prefetch={true}
                   className="w-full sm:w-auto inline-flex items-center justify-center text-sm bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-6 py-3 rounded-full font-semibold shadow-sm hover:shadow-md"
                 >
                   Explore Services
                 </Link>
                 <Link
                   href="/contact"
+                  prefetch={true}
                   className="w-full sm:w-auto inline-flex items-center justify-center text-sm text-amber-700 hover:text-amber-800 underline decoration-amber-400 underline-offset-4 px-6 py-3 rounded-full bg-white/0"
                 >
                   Get in Touch

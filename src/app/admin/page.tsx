@@ -49,25 +49,35 @@ export default function Admin(): React.ReactElement {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    
+    const controller = new AbortController();
+    
     const fetchImages = async () => {
       setProgressState({ status: 'loading', text: 'Loading gallery...' });
       setLoadingImages(true);
       try {
-        const res = await fetch('/api/images');
+        const res = await fetch('/api/images', {
+          signal: controller.signal,
+          cache: 'force-cache', // Use browser cache when available
+        });
         if (!res.ok) throw new Error('Unable to load images');
         const data = await res.json();
         setImages(Array.isArray(data) ? data : []);
         setProgressState({ status: 'success', text: 'Gallery ready' });
       } catch (err) {
-        console.error(err);
-        setImages([]);
-        setProgressState({ status: 'error', text: 'Failed to load gallery' });
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error(err);
+          setImages([]);
+          setProgressState({ status: 'error', text: 'Failed to load gallery' });
+        }
       } finally {
         setLoadingImages(false);
       }
     };
 
     fetchImages();
+    
+    return () => controller.abort();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -406,7 +416,15 @@ export default function Admin(): React.ReactElement {
             {filteredImages.map((img) => (
               <motion.div key={img._id} className="group bg-white/95 rounded-2xl shadow-sm border border-amber-200 overflow-hidden cursor-pointer" whileHover={{ scale: 1.02 }}>
                 <div className="relative h-44 sm:h-40" onClick={() => handleImageClick(img)}>
-                  <Image src={img.url} alt="mehendi" fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+                  <Image 
+                    src={img.url} 
+                    alt="mehendi" 
+                    fill 
+                    className="object-cover" 
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    loading="lazy"
+                    quality={75}
+                  />
                 </div>
 
                 <div className="p-3 flex items-center justify-between bg-amber-50">
@@ -451,7 +469,13 @@ export default function Admin(): React.ReactElement {
 
                 <div className="mt-4 overflow-auto">
                   <div className="w-full h-56 relative rounded-lg overflow-hidden border border-amber-100">
-                    <Image src={editingImage.url} alt="editing" fill className="object-cover" />
+                    <Image 
+                      src={editingImage.url} 
+                      alt="editing" 
+                      fill 
+                      className="object-cover"
+                      quality={80}
+                    />
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 gap-3">

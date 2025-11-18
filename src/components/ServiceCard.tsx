@@ -67,7 +67,8 @@ export default function ServiceCard({
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
-            priority={false}
+            loading="lazy"
+            quality={80}
           />
           
           {/* Hover Overlay */}
@@ -155,6 +156,7 @@ export default function ServiceCard({
           >
             <Link
               href={ctaLink}
+              prefetch={true}
               className="w-full inline-flex items-center justify-center text-sm sm:text-base bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-5 py-2.5 rounded-full font-semibold shadow-md hover:shadow-lg transition-all"
             >
               {ctaText}
@@ -168,6 +170,7 @@ export default function ServiceCard({
           >
             <Link
               href="/gallery"
+              prefetch={true}
               className="w-full inline-flex items-center justify-center text-sm sm:text-base text-amber-700 hover:text-amber-900 border-2 border-amber-300 hover:border-amber-400 bg-white hover:bg-amber-50 px-5 py-2.5 rounded-full font-semibold transition-all"
             >
               View Gallery

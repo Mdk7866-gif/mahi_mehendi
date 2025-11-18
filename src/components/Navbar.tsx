@@ -40,6 +40,7 @@ export default function Navbar(): React.ReactElement {
                 <motion.div key={href} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <Link
                     href={href}
+                    prefetch={true}
                     className="relative group text-amber-700 hover:text-amber-900 font-medium text-sm lg:text-base"
                   >
                     {label}
@@ -90,6 +91,7 @@ export default function Navbar(): React.ReactElement {
                     <motion.div key={href} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
                       <Link
                         href={href}
+                        prefetch={true}
                         onClick={() => setIsOpen(false)}
                         className="block px-3 py-2 rounded-md text-amber-800 hover:bg-amber-50 font-medium text-sm text-left"
                       >

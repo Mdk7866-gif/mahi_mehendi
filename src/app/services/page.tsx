@@ -39,9 +39,71 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
+/* --------------------------
+   DUMMY SERVICES (moved out)
+   -------------------------- */
+const DUMMY_SERVICES: Service[] = [
+  {
+    id: 'bridal',
+    title: 'Bridal Mehendi',
+    description:
+      'Intricate bridal patterns for hands & feet — handcrafted with premium natural henna for long-lasting colour and beautiful details.',
+    features: ['Full hands & feet', 'Custom bridal motifs', 'Premium natural paste', 'Aftercare tips'],
+    image:
+      'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
+    alt: 'Bridal mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹6,999'
+  },
+  {
+    id: 'engagement',
+    title: 'Engagement Mehendi',
+    description:
+      'Romantic and elegant designs perfect for engagement ceremonies — fast application suitable for the event flow.',
+    features: ['Floral & romantic motifs', 'Quick application', 'Guest-friendly designs', 'Safe for pregnancy'],
+    image:
+      'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
+    alt: 'Engagement mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹3,499'
+  },
+  {
+    id: 'babyshower',
+    title: 'Baby Shower & Sangeet Mehendi',
+    description:
+      'Playful, themed designs for baby showers and sangeet nights — group packages available to make the event fun and memorable.',
+    features: ['Group packages', 'Themed motifs', 'Quick sessions', 'Customization available'],
+    image:
+      'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
+    alt: 'Baby shower mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'Packages from ₹1,199'
+  },
+  {
+    id: 'sider',
+    title: 'Sider Mehendi',
+    description:
+      'Minimalist side-hand and wrist-focused designs — ideal for everyday style, office events, or when you want subtle elegance.',
+    features: ['Side-hand motifs', '30-45 min sessions', 'Minimal & modern', 'Long-lasting stain'],
+    image:
+      'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
+    alt: 'Sider mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹699'
+  }
+];
+
 export default function ServicesPage(): React.ReactElement {
-  const [services, setServices] = useState<Service[]>([]);
+  // Initialize services directly to avoid setting state synchronously inside an effect.
+  const [services] = useState<Service[]>(() => DUMMY_SERVICES);
+
+  // Keep a short simulated loading to show spinner UX if desired
   const [loading, setLoading] = useState(true);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
   const [imageScale, setImageScale] = useState(1);
@@ -56,70 +118,13 @@ export default function ServicesPage(): React.ReactElement {
   const isPanningRef = useRef(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Simulated small loading delay for polished UX — change or remove if not needed
   useEffect(() => {
-    const dummyServices: Service[] = [
-      {
-        id: 'bridal',
-        title: 'Bridal Mehendi',
-        description:
-          'Intricate bridal patterns for hands & feet — handcrafted with premium natural henna for long-lasting colour and beautiful details.',
-        features: ['Full hands & feet', 'Custom bridal motifs', 'Premium natural paste', 'Aftercare tips'],
-        image:
-          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397084/bridal_mehendi_b5jpzc.webp',
-        alt: 'Bridal mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹6,999'
-      },
-      {
-        id: 'engagement',
-        title: 'Engagement Mehendi',
-        description:
-          'Romantic and elegant designs perfect for engagement ceremonies — fast application suitable for the event flow.',
-        features: ['Floral & romantic motifs', 'Quick application', 'Guest-friendly designs', 'Safe for pregnancy'],
-        image:
-          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397286/engagement_mehendi_x65njr.jpg',
-        alt: 'Engagement mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹3,499'
-      },
-      {
-        id: 'babyshower',
-        title: 'Baby Shower & Sangeet Mehendi',
-        description:
-          'Playful, themed designs for baby showers and sangeet nights — group packages available to make the event fun and memorable.',
-        features: ['Group packages', 'Themed motifs', 'Quick sessions', 'Customization available'],
-        image:
-          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397620/baby_shower_ng29hv.jpg',
-        alt: 'Baby shower mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'Packages from ₹1,199'
-      },
-      {
-        id: 'sider',
-        title: 'Sider Mehendi',
-        description:
-          'Minimalist side-hand and wrist-focused designs — ideal for everyday style, office events, or when you want subtle elegance.',
-        features: ['Side-hand motifs', '30-45 min sessions', 'Minimal & modern', 'Long-lasting stain'],
-        image:
-          'https://res.cloudinary.com/ddya4o2yl/image/upload/v1763397709/sider_mehendi_qqa8dt.webp',
-        alt: 'Sider mehendi',
-        ctaText: 'Book Now',
-        ctaLink: '/contact',
-        price: 'From ₹699'
-      }
-    ];
-
-    const timer = setTimeout(() => {
-      setServices(dummyServices);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(t);
   }, []);
 
+  // Image modal helpers
   const applyTransform = useCallback(() => {
     const el = imgWrapperRef.current;
     if (!el) return;
@@ -332,7 +337,7 @@ export default function ServicesPage(): React.ReactElement {
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
         >
           {/* Header */}
-          <motion.header 
+          <motion.header
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -342,7 +347,7 @@ export default function ServicesPage(): React.ReactElement {
               <Sparkles className="text-amber-600" size={16} />
               <span className="text-xs sm:text-sm text-amber-800 font-medium">Premium Mehendi Artistry</span>
             </div>
-            <motion.h1 
+            <motion.h1
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -350,7 +355,7 @@ export default function ServicesPage(): React.ReactElement {
             >
               Our Services
             </motion.h1>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -364,7 +369,7 @@ export default function ServicesPage(): React.ReactElement {
           <section aria-labelledby="services-heading" className="mb-12 sm:mb-16">
             <h2 id="services-heading" className="sr-only">Services</h2>
 
-            <motion.div 
+            <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -381,7 +386,7 @@ export default function ServicesPage(): React.ReactElement {
           </section>
 
           {/* Course Section */}
-          <motion.section 
+          <motion.section
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -390,20 +395,20 @@ export default function ServicesPage(): React.ReactElement {
           >
             <h2 id="course-heading" className="sr-only">Mehendi Mastery Course</h2>
 
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.98 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5 }}
               className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-5 sm:p-6 lg:p-8"
             >
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6"
               >
                 <div className="flex-1">
-                  <motion.div 
+                  <motion.div
                     initial={{ scale: 0 }}
                     whileInView={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 400, delay: 0.2 }}
@@ -418,7 +423,7 @@ export default function ServicesPage(): React.ReactElement {
                   </p>
                 </div>
 
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="w-full lg:w-auto"
@@ -429,7 +434,7 @@ export default function ServicesPage(): React.ReactElement {
                 </motion.div>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 whileInView="visible"
@@ -437,14 +442,14 @@ export default function ServicesPage(): React.ReactElement {
                 className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6"
               >
                 {courseModules.map((module, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={idx}
                     variants={itemVariants}
                     whileHover={{ scale: 1.02, y: -2 }}
                     className="group bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 hover:border-amber-300 transition-all"
                   >
                     <div className="flex items-start gap-3">
-                      <motion.div 
+                      <motion.div
                         className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm text-sm sm:text-base"
                         initial={{ rotate: 0 }}
                         whileHover={{ rotate: 360 }}
@@ -467,7 +472,7 @@ export default function ServicesPage(): React.ReactElement {
                 ))}
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -478,7 +483,7 @@ export default function ServicesPage(): React.ReactElement {
                   <span className="text-sm sm:text-base font-semibold text-amber-800">Course Benefits</span>
                 </div>
 
-                <motion.div 
+                <motion.div
                   variants={containerVariants}
                   initial="hidden"
                   whileInView="visible"
@@ -491,7 +496,7 @@ export default function ServicesPage(): React.ReactElement {
                     'Lifetime Support',
                     'Practice Kits'
                   ].map((benefit, idx) => (
-                    <motion.div 
+                    <motion.div
                       key={idx}
                       variants={itemVariants}
                       whileHover={{ x: 5 }}
@@ -525,9 +530,9 @@ export default function ServicesPage(): React.ReactElement {
           }}
         >
           <div className="relative w-full h-full max-w-full max-h-full p-4 box-border flex items-center justify-center">
-            <button 
-              onClick={closeModal} 
-              aria-label="Close image" 
+            <button
+              onClick={closeModal}
+              aria-label="Close image"
               className="absolute top-4 right-4 z-50 bg-white/95 hover:bg-white px-4 py-2 rounded-full shadow-lg text-sm font-medium"
             >
               Close

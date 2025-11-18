@@ -31,8 +31,8 @@ export default function Contact(): React.ReactElement {
   const okButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 450);
-    return () => clearTimeout(t);
+    // Remove artificial delay - load immediately
+    setLoading(false);
   }, []);
 
   // auto-dismiss modal after 4s when it opens

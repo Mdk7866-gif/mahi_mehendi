@@ -23,7 +23,12 @@ export async function GET() {
       createdAt: cert.createdAt ? new Date(cert.createdAt as Date | string).toISOString() : new Date().toISOString(),
     }));
     
-    return NextResponse.json(formatted, { status: 200 });
+    return NextResponse.json(formatted, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+      },
+    });
   } catch (err) {
     console.error('Fetch certificates error:', err);
     return NextResponse.json({ error: 'Failed to fetch certificates' }, { status: 500 });

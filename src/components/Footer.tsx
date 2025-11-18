@@ -83,7 +83,7 @@ export default function Footer(): React.ReactElement {
                 { href: "/contact", label: "Contact" },
               ].map(({ href, label }) => (
                 <li key={href}>
-                  <Link href={href} className="text-amber-700 hover:text-amber-900 text-sm">
+                  <Link href={href} prefetch={true} className="text-amber-700 hover:text-amber-900 text-sm">
                     → {label}
                   </Link>
                 </li>

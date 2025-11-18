@@ -33,8 +33,10 @@ function getOptimizedImageUrl(url: string, width: number) {
   if (url.includes('cloudinary.com') && url.includes('/upload/')) {
     const prefix = url.split('/upload/')[0];
     const rest = url.split('/upload/')[1];
+    // Check if transformations already exist
     if (!/q_auto|f_auto|w_/.test(rest)) {
-      return `${prefix}/upload/w_${width},q_auto:good,f_auto/${rest}`;
+      // Use smaller widths for thumbnails, auto quality, and WebP format
+      return `${prefix}/upload/w_${width},q_auto:low,f_auto,dpr_auto/${rest}`;
     }
   }
   return url;
@@ -48,11 +50,27 @@ export default function Gallery(): React.ReactElement {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetch('/api/images')
+    // Prefetch images API for faster loading
+    const controller = new AbortController();
+    
+    // Start fetch immediately without delay
+    fetch('/api/images', { 
+      signal: controller.signal,
+      cache: 'force-cache' // Use browser cache when available
+    })
       .then((r) => r.json())
-      .then((data) => setImages(Array.isArray(data) ? data : []))
-      .catch(() => setImages([]))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setImages(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setImages([]);
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
   }, []);
 
   const filtered = useMemo(() => images.filter(i => i.category === selectedCategory), [images, selectedCategory]);
@@ -114,14 +132,18 @@ export default function Gallery(): React.ReactElement {
 
                   {/* compact image height (like Admin) */}
                   <div className="relative h-44 sm:h-40 bg-amber-50" onClick={() => setSelectedImage(img)}>
-                    {!loaded[img._id] && <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100" />}
+                    {!loaded[img._id] && (
+                      <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100" />
+                    )}
 
                     <Image
-                      src={getOptimizedImageUrl(img.url, 800)}
+                      src={getOptimizedImageUrl(img.url, 400)}
                       alt={`${img.category} mehendi`}
                       fill
                       className={`object-cover transition-transform duration-500 group-hover:scale-110 ${loaded[img._id] ? 'opacity-100' : 'opacity-0'}`}
-                      sizes="(max-width: 640px) 100vw, 33vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      loading="lazy"
+                      quality={75}
                       onLoad={() => setLoaded(prev => ({ ...prev, [img._id]: true }))}
                     />
                   </div>
