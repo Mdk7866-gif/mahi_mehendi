@@ -11,16 +11,16 @@ export async function GET() {
       .exec();
     
     // Transform to ensure consistent format
-    const formatted = certificates.map((cert: any) => ({
-      _id: cert._id.toString(),
-      name: cert.name,
-      courseName: cert.courseName || 'Professional Mehendi Course',
+    const formatted = certificates.map((cert: Record<string, unknown>) => ({
+      _id: (cert._id as { toString: () => string }).toString(),
+      name: String(cert.name || ''),
+      courseName: String(cert.courseName || 'Professional Mehendi Course'),
       completionDate: cert.completionDate instanceof Date 
         ? cert.completionDate.toISOString().split('T')[0]
-        : cert.completionDate,
-      pdfUrl: cert.pdfUrl || '',
-      certificateNumber: cert.certificateNumber || '',
-      createdAt: cert.createdAt ? new Date(cert.createdAt).toISOString() : new Date().toISOString(),
+        : String(cert.completionDate || ''),
+      pdfUrl: String(cert.pdfUrl || ''),
+      certificateNumber: String(cert.certificateNumber || ''),
+      createdAt: cert.createdAt ? new Date(cert.createdAt as Date | string).toISOString() : new Date().toISOString(),
     }));
     
     return NextResponse.json(formatted, { status: 200 });

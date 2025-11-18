@@ -1,5 +1,5 @@
 // src/app/api/generate-certificate/route.ts
-import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import sharp from 'sharp'; // For auto-correcting image orientation
 
 export const runtime = 'nodejs';
@@ -178,7 +178,6 @@ export async function POST(req: Request) {
 
     // Completion date (bottom-left)
     const dateLabel = 'Date of Completion';
-    const dateLabelWidth = font.widthOfTextAtSize(dateLabel, 10);
     page.drawText(dateLabel, {
       x: borderPadding + 40,
       y: borderPadding + 75,
@@ -207,7 +206,6 @@ export async function POST(req: Request) {
     // Instructor signature section (bottom-right)
     const sigLabel = 'Instructor Signature';
     const sigLabelSize = 10;
-    const sigLabelWidth = font.widthOfTextAtSize(sigLabel, sigLabelSize);
     page.drawText(sigLabel, {
       x: width - borderPadding - 190,
       y: borderPadding + 75,
@@ -247,7 +245,7 @@ export async function POST(req: Request) {
           .rotate() // Auto-corrects orientation
           .toBuffer();
 
-        const mime = (photo as any).type || '';
+        const mime = (photo as Blob).type || '';
         if (mime.includes('png')) {
           embeddedImage = await pdfDoc.embedPng(correctedBuffer);
         } else {
@@ -367,7 +365,7 @@ export async function POST(req: Request) {
     const safeName = name.replace(/[^a-z0-9_\- ]/gi, '').replace(/\s+/g, '-');
     const filename = `Mahi-Mehendi-Certificate-${safeName || 'certificate'}.pdf`;
 
-    return new Response(pdfBytes, {
+    return new Response(pdfBytes as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -378,7 +376,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error('Certificate generation error:', err);
     return new Response(
-      JSON.stringify({ error: 'Failed to generate certificate', detail: (err as any)?.message || String(err) }),
+      JSON.stringify({ error: 'Failed to generate certificate', detail: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Sparkles, FileDown, CheckCircle2, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function CertificateGeneration() {
   const [name, setName] = useState('');
@@ -212,7 +213,7 @@ export default function CertificateGeneration() {
 
             {photoPreview && (
               <div className="mt-4 flex items-center gap-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                <img src={photoPreview} alt="Learner preview" className="w-16 h-16 rounded-xl object-cover border border-amber-200" />
+                <Image src={photoPreview} alt="Learner preview" width={64} height={64} className="w-16 h-16 rounded-xl object-cover border border-amber-200" />
                 <div className="text-sm text-amber-800">
                   <p className="font-semibold">Preview ready</p>
                   <p>Upload to Cloudinary before generating the certificate.</p>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Download, Calendar, FileText, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface Certificate {
   _id: string;
@@ -102,9 +103,11 @@ export default function ReviewPage() {
                     {/* PDF Preview */}
                     <div className="relative h-64 bg-amber-50 border-b border-amber-100">
                       {previewUrl ? (
-                        <img
+                        <Image
                           src={previewUrl}
                           alt={`Certificate preview for ${cert.name}`}
+                          width={400}
+                          height={256}
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             // Fallback to PDF icon if preview fails

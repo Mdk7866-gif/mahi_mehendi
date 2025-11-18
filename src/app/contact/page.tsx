@@ -101,7 +101,7 @@ export default function Contact(): React.ReactElement {
               <form onSubmit={handleSubmit} className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 sm:p-6 shadow-md border border-amber-200">
                 {submitted && (
                   <div className="mb-4 p-3 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100">
-                    Thank you — your message has been sent. We'll contact you shortly.
+                    Thank you — your message has been sent. We&apos;ll contact you shortly.
                   </div>
                 )}
 

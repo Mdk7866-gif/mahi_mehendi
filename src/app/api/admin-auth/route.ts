@@ -15,7 +15,9 @@ const isValidSession = (value: string | undefined): boolean => {
 };
 
 export async function GET() {
-  const token = cookies().get(ADMIN_COOKIE_NAME)?.value;
+  // types show cookies() returns a Promise<ReadonlyRequestCookies>, so await it first
+  const ck = await cookies();
+  const token = ck.get(ADMIN_COOKIE_NAME)?.value;
   return NextResponse.json({ authenticated: isValidSession(token) });
 }
 
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 6, // 6 hours
     });
     return res;
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Unable to process request' }, { status: 400 });
   }
 }
@@ -54,4 +56,3 @@ export async function DELETE() {
   });
   return res;
 }
-
