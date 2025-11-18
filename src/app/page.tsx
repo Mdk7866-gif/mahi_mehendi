@@ -814,36 +814,7 @@ export default function HomePage(): React.ReactElement {
             </div>
           </motion.section>
 
-          {/* Final CTA */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-8 sm:p-12 text-white shadow-2xl">
-              <Sparkles className="mx-auto mb-4" size={32} />
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to Adorn Your Hands?</h2>
-              <p className="text-amber-100 text-sm sm:text-base mb-6 max-w-md mx-auto">
-                Book your Mehendi session today and let us create magic for your special day.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/contact"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white text-amber-900 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all"
-                >
-                  Book Now
-                </Link>
-                <Link
-                  href="/services"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-amber-900 transition-all"
-                >
-                  View Services
-                </Link>
-              </div>
-            </div>
-          </motion.section>
+        
         </motion.div>
 
         <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">

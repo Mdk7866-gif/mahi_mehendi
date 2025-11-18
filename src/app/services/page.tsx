@@ -1,10 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, Clock, Award, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Sparkles, Clock, Award, CheckCircle2 } from 'lucide-react';
+import ServiceCard from '@/components/ServiceCard';
 
 interface Service {
   id: string;
@@ -29,7 +28,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.06,
+      staggerChildren: 0.15,
       delayChildren: 0.1
     }
   }
@@ -37,17 +36,12 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45 } }
-};
-
-const cardHoverVariants = {
-  hover: { scale: 1.02, transition: { duration: 0.2 } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
 export default function ServicesPage(): React.ReactElement {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
   const [imageScale, setImageScale] = useState(1);
@@ -118,12 +112,12 @@ export default function ServicesPage(): React.ReactElement {
       }
     ];
 
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setServices(dummyServices);
       setLoading(false);
     }, 500);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, []);
 
   const applyTransform = useCallback(() => {
@@ -324,25 +318,10 @@ export default function ServicesPage(): React.ReactElement {
   return (
     <>
       <style>{`
-        .service-card { overflow: hidden; }
-        .service-image-outer { 
-          min-width: 163px; 
-          max-width: 40%; 
-          height: auto;
-          position: relative;
-        }
-        @media (min-width: 768px) {
-          .service-image-outer { max-width: 272px; }
-        }
-
         .image-modal-backdrop { background: rgba(10,10,10,0.9); backdrop-filter: blur(6px); z-index: 60; }
         .image-modal-content { touch-action: none; will-change: transform; }
         .cursor-grabbing { cursor: grabbing !important; }
-
         html, body { overscroll-behavior-x: contain; }
-
-        .service-image-inner { transition: transform 0.3s ease; }
-        .group:hover .service-image-inner { transform: scale(1.05); }
       `}</style>
 
       <main className="min-h-screen mt-12 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 relative overflow-x-hidden">
@@ -350,23 +329,24 @@ export default function ServicesPage(): React.ReactElement {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
         >
+          {/* Header */}
           <motion.header 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-6"
+            className="text-center mb-10 sm:mb-12"
           >
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-3 shadow-sm mx-auto">
-              <Sparkles className="text-amber-600" size={14} />
-              <span className="text-xs text-amber-800 font-medium">Premium Mehendi Artistry</span>
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm">
+              <Sparkles className="text-amber-600" size={16} />
+              <span className="text-xs sm:text-sm text-amber-800 font-medium">Premium Mehendi Artistry</span>
             </div>
             <motion.h1 
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-900 leading-tight"
+              className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight mb-3"
             >
               Our Services
             </motion.h1>
@@ -374,141 +354,33 @@ export default function ServicesPage(): React.ReactElement {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-amber-700 text-xs sm:text-sm max-w-xl mx-auto mt-2"
+              className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto"
             >
               Exquisite henna designs for every celebration — from intimate gatherings to grand weddings.
             </motion.p>
           </motion.header>
 
-          <section aria-labelledby="services-heading" className="mb-8">
+          {/* Services Grid */}
+          <section aria-labelledby="services-heading" className="mb-12 sm:mb-16">
             <h2 id="services-heading" className="sr-only">Services</h2>
 
             <motion.div 
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="flex flex-col gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
             >
-              {services.map((s) => (
-                <motion.article
-                  key={s.id}
-                  variants={itemVariants}
-                  whileHover={cardHoverVariants}
-                  className="service-card group bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 p-3 flex items-start gap-3 md:gap-4"
-                  aria-labelledby={`service-${s.id}-title`}
-                >
-                  <div
-                    className="service-image-outer flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-amber-300 group-hover:ring-amber-400 transition-all"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openImageModal(s.image)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') openImageModal(s.image);
-                    }}
-                    aria-label={`Open ${s.title} image`}
-                    title="Tap to open image"
-                  >
-                    <motion.div 
-                      className="service-image-inner w-full h-full relative"
-                      style={{ aspectRatio: '3/4' }}
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Image
-                        src={s.image}
-                        alt={s.alt}
-                        fill
-                        sizes="(max-width: 768px) 40vw, 272px"
-                        className="object-cover"
-                        loading="lazy"
-                      />
-                    </motion.div>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <motion.div 
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="flex items-start justify-between mb-1 gap-2"
-                    >
-                      <h3 id={`service-${s.id}-title`} className="text-sm sm:text-base font-semibold text-amber-900 truncate">
-                        {s.title}
-                      </h3>
-
-                      <div className="flex items-center gap-2">
-                        <motion.span 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                          className="text-xs text-amber-700 font-bold bg-amber-50 px-2 py-1 rounded-full border border-amber-200"
-                        >
-                          {s.price}
-                        </motion.span>
-                      </div>
-                    </motion.div>
-
-                    <motion.p 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-[12px] sm:text-sm text-gray-700 leading-relaxed mb-2 line-clamp-3"
-                    >
-                      {s.description}
-                    </motion.p>
-
-                    <motion.ul 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex flex-wrap gap-2 mb-3"
-                      aria-label={`${s.title} features`}
-                    >
-                      {s.features.map((f, i) => (
-                        <motion.li 
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.4 + i * 0.05 }}
-                          className="flex items-center gap-2 text-[11px] bg-amber-50 border border-amber-200 rounded-full px-2 py-1 text-amber-800"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          <CheckCircle2 size={12} className="text-amber-600 flex-shrink-0" />
-                          <span className="truncate max-w-[8rem]">{f}</span>
-                        </motion.li>
-                      ))}
-                    </motion.ul>
-
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-                    >
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Link
-                          href={s.ctaLink}
-                          className="w-full sm:w-auto inline-flex items-center justify-center text-sm bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-semibold shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300 text-center"
-                        >
-                          {s.ctaText}
-                        </Link>
-                      </motion.div>
-
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Link
-                          href="/gallery"
-                          className="w-full sm:w-auto inline-flex items-center justify-center text-sm text-amber-700 hover:text-amber-800 underline decoration-amber-400 underline-offset-4 transition-colors px-3 py-2 rounded-full bg-white/0 text-center"
-                        >
-                          View Gallery
-                        </Link>
-                      </motion.div>
-                    </motion.div>
-                  </div>
-                </motion.article>
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  {...service}
+                  onImageClick={openImageModal}
+                />
               ))}
             </motion.div>
           </section>
 
+          {/* Course Section */}
           <motion.section 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -522,34 +394,36 @@ export default function ServicesPage(): React.ReactElement {
               initial={{ scale: 0.98 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200 p-4"
+              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-5 sm:p-6 lg:p-8"
             >
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex flex-col md:flex-row items-start justify-between gap-3 mb-4"
+                className="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6"
               >
-                <div>
+                <div className="flex-1">
                   <motion.div 
                     initial={{ scale: 0 }}
                     whileInView={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 400, delay: 0.2 }}
-                    className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 mb-2"
+                    className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5 mb-3"
                   >
-                    <Award className="text-amber-600" size={14} />
-                    <span className="text-[10px] text-amber-800 font-medium uppercase tracking-wider">Certified Course</span>
+                    <Award className="text-amber-600" size={16} />
+                    <span className="text-xs text-amber-800 font-medium uppercase tracking-wider">Certified Course</span>
                   </motion.div>
-                  <h3 className="text-lg sm:text-xl font-bold text-amber-900 mb-1">Mehendi Mastery Course</h3>
-                  <p className="text-[12px] sm:text-sm text-gray-700 max-w-xl">Complete certification program from basics to bridal expertise with hands-on practice and mentorship.</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-amber-900 mb-2">Mehendi Mastery Course</h3>
+                  <p className="text-sm sm:text-base text-gray-700 max-w-2xl">
+                    Complete certification program from basics to bridal expertise with hands-on practice and mentorship.
+                  </p>
                 </div>
 
                 <motion.div 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mt-2 md:mt-0 w-full md:w-52"
+                  className="w-full lg:w-auto"
                 >
-                  <button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-4 py-2 rounded-full font-bold shadow-sm">
+                  <button className="w-full lg:w-auto bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-6 py-3 rounded-full font-bold shadow-md hover:shadow-lg transition-all text-sm sm:text-base">
                     Enroll Now
                   </button>
                 </motion.div>
@@ -560,33 +434,33 @@ export default function ServicesPage(): React.ReactElement {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6"
               >
-                {courseModules.map((m, idx) => (
+                {courseModules.map((module, idx) => (
                   <motion.div 
                     key={idx}
                     variants={itemVariants}
                     whileHover={{ scale: 1.02, y: -2 }}
-                    className="group bg-amber-50 border border-amber-200 rounded-xl p-3 hover:bg-amber-100 hover:border-amber-300 transition-all"
+                    className="group bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 hover:border-amber-300 transition-all"
                   >
                     <div className="flex items-start gap-3">
                       <motion.div 
-                        className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm"
+                        className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm text-sm sm:text-base"
                         initial={{ rotate: 0 }}
                         whileHover={{ rotate: 360 }}
                         transition={{ duration: 0.6 }}
                       >
                         {idx + 1}
                       </motion.div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="text-sm font-semibold text-amber-900">{m.title}</div>
-                          <div className="flex items-center gap-1 text-[10px] text-amber-700 bg-white px-2 py-0.5 rounded-full border border-amber-200">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <div className="text-sm sm:text-base font-semibold text-amber-900">{module.title}</div>
+                          <div className="flex items-center gap-1 text-xs text-amber-700 bg-white px-2 py-1 rounded-full border border-amber-200 w-fit">
                             <Clock size={12} />
-                            {m.duration}
+                            {module.duration}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-700">{m.description}</div>
+                        <div className="text-xs sm:text-sm text-gray-700">{module.description}</div>
                       </div>
                     </div>
                   </motion.div>
@@ -597,11 +471,11 @@ export default function ServicesPage(): React.ReactElement {
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3"
+                className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="text-amber-600" size={14} />
-                  <span className="text-sm font-semibold text-amber-800">Course Benefits</span>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="text-amber-600" size={16} />
+                  <span className="text-sm sm:text-base font-semibold text-amber-800">Course Benefits</span>
                 </div>
 
                 <motion.div 
@@ -609,7 +483,7 @@ export default function ServicesPage(): React.ReactElement {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                 >
                   {[
                     'Official Certificate',
@@ -623,8 +497,8 @@ export default function ServicesPage(): React.ReactElement {
                       whileHover={{ x: 5 }}
                       className="flex items-start gap-2"
                     >
-                      <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={14} />
-                      <span className="text-xs text-gray-700">{benefit}</span>
+                      <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" size={16} />
+                      <span className="text-xs sm:text-sm text-gray-700">{benefit}</span>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -633,12 +507,14 @@ export default function ServicesPage(): React.ReactElement {
           </motion.section>
         </motion.div>
 
+        {/* Decorative Background Elements */}
         <div className="pointer-events-none absolute inset-0 opacity-10 -z-10">
           <div className="absolute top-20 left-6 w-40 h-40 bg-amber-400 rounded-full blur-3xl" />
           <div className="absolute bottom-12 right-6 w-56 h-56 bg-orange-400 rounded-full blur-3xl" />
         </div>
       </main>
 
+      {/* Image Modal */}
       {modalOpen && modalSrc && (
         <div
           className="fixed inset-0 flex items-center justify-center image-modal-backdrop"
@@ -649,7 +525,11 @@ export default function ServicesPage(): React.ReactElement {
           }}
         >
           <div className="relative w-full h-full max-w-full max-h-full p-4 box-border flex items-center justify-center">
-            <button onClick={closeModal} aria-label="Close image" className="absolute top-safe right-safe z-50 bg-white/95 hover:bg-white px-3 py-2 rounded-full shadow">
+            <button 
+              onClick={closeModal} 
+              aria-label="Close image" 
+              className="absolute top-4 right-4 z-50 bg-white/95 hover:bg-white px-4 py-2 rounded-full shadow-lg text-sm font-medium"
+            >
               Close
             </button>
 
@@ -680,7 +560,7 @@ export default function ServicesPage(): React.ReactElement {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={modalSrc}
-                alt="preview"
+                alt="Service preview"
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
