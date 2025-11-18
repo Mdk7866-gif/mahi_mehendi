@@ -23,14 +23,61 @@ export default function Admin(): React.ReactElement {
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [progressState, setProgressState] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; text: string }>({ status: 'idle', text: '' });
+  const [progressValue, setProgressValue] = useState(0);
 
   useEffect(() => {
-    fetch('/api/images')
-      .then((r) => r.json())
-      .then((data) => setImages(Array.isArray(data) ? data : []))
-      .catch(() => setImages([]))
-      .finally(() => setLoadingImages(false));
+    const fetchImages = async () => {
+      setProgressState({ status: 'loading', text: 'Loading gallery...' });
+      setLoadingImages(true);
+      try {
+        const res = await fetch('/api/images');
+        if (!res.ok) throw new Error('Unable to load images');
+        const data = await res.json();
+        setImages(Array.isArray(data) ? data : []);
+        setProgressState({ status: 'success', text: 'Gallery ready' });
+      } catch (err) {
+        console.error(err);
+        setImages([]);
+        setProgressState({ status: 'error', text: 'Failed to load gallery' });
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+
+    fetchImages();
   }, []);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    if (progressState.status === 'loading') {
+      setProgressValue(18);
+      interval = setInterval(() => {
+        setProgressValue((prev) => (prev >= 85 ? 85 : prev + Math.random() * 10));
+      }, 400);
+    } else if (progressState.status === 'success' || progressState.status === 'error') {
+      setProgressValue(100);
+      timeout = setTimeout(() => {
+        let shouldReset = false;
+        setProgressState((state) => {
+          if (state.status === 'loading') return state;
+          shouldReset = state.status !== 'idle';
+          return shouldReset ? { status: 'idle', text: '' } : state;
+        });
+        if (shouldReset) setProgressValue(0);
+      }, 1500);
+    } else {
+      setProgressValue(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [progressState.status]);
 
   const filteredImages = images.filter((i) => i.category === selectedCategory);
 
@@ -52,14 +99,29 @@ export default function Admin(): React.ReactElement {
     form.append('price', (payload?.price ?? String(editingImage.price)) as string);
     if (payload?.file) form.append('image', payload.file);
 
-    const res = await fetch(`/api/images/${editingImage._id}`, { method: 'PUT', body: form });
-    const json = await res.json();
-    if (res.ok && json?.image?._id) {
-      setImages((prev) => prev.map((p) => (p._id === json.image._id ? json.image : p)));
-      setMessage('Updated successfully');
-      setEditingImage(null);
-    } else {
-      setMessage(json?.error || 'Update failed');
+    setSavingEdit(true);
+    setProgressState({ status: 'loading', text: 'Saving changes...' });
+    setMessage('');
+
+    try {
+      const res = await fetch(`/api/images/${editingImage._id}`, { method: 'PUT', body: form });
+      const json = await res.json();
+      if (res.ok && json?.image?._id) {
+        setImages((prev) => prev.map((p) => (p._id === json.image._id ? json.image : p)));
+        setMessage('Updated successfully');
+        setEditingImage(null);
+        setProgressState({ status: 'success', text: 'Changes saved' });
+      } else {
+        const errorMsg = json?.error || 'Update failed';
+        setMessage(errorMsg);
+        setProgressState({ status: 'error', text: errorMsg });
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Update error';
+      setMessage(errorMsg);
+      setProgressState({ status: 'error', text: errorMsg });
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -67,6 +129,7 @@ export default function Admin(): React.ReactElement {
 
   const performDelete = async (id: string) => {
     setDeleting(true);
+    setProgressState({ status: 'loading', text: 'Deleting photo...' });
     setMessage('');
     try {
       const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
@@ -74,11 +137,16 @@ export default function Admin(): React.ReactElement {
       if (res.ok) {
         setImages((prev) => prev.filter((p) => p._id !== id));
         setMessage('Deleted successfully');
+        setProgressState({ status: 'success', text: 'Photo deleted' });
       } else {
-        setMessage(json?.error || 'Delete failed');
+        const errorMsg = json?.error || 'Delete failed';
+        setMessage(errorMsg);
+        setProgressState({ status: 'error', text: errorMsg });
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Delete error');
+      const errorMsg = err instanceof Error ? err.message : 'Delete error';
+      setMessage(errorMsg);
+      setProgressState({ status: 'error', text: errorMsg });
     } finally {
       setDeleting(false);
       setConfirmDeleteId(null);
@@ -92,10 +160,12 @@ export default function Admin(): React.ReactElement {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formEl = e.currentTarget;
     setUploading(true);
+    setProgressState({ status: 'loading', text: 'Uploading photo...' });
     setMessage('');
 
-    const fileEl = (e.currentTarget.elements.namedItem('image') as HTMLInputElement | null)?.files?.[0];
+    const fileEl = (formEl.elements.namedItem('image') as HTMLInputElement | null)?.files?.[0];
     if (!fileEl) {
       setMessage('Please select an image file');
       setUploading(false);
@@ -112,14 +182,19 @@ export default function Admin(): React.ReactElement {
       const json = await res.json();
       if (res.ok) {
         setMessage('Image uploaded successfully!');
-        e.currentTarget.reset();
+        formEl.reset();
         setFormData({ category: 'bridal', price: '' });
         if (json?.image?._id) setImages((p) => [json.image, ...p]);
+        setProgressState({ status: 'success', text: 'Upload complete' });
       } else {
-        setMessage(json?.error || 'Upload failed');
+        const errorMsg = json?.error || 'Upload failed';
+        setMessage(errorMsg);
+        setProgressState({ status: 'error', text: errorMsg });
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Upload error');
+      const errorMsg = err instanceof Error ? err.message : 'Upload error';
+      setMessage(errorMsg);
+      setProgressState({ status: 'error', text: errorMsg });
     } finally {
       setUploading(false);
     }
@@ -128,7 +203,7 @@ export default function Admin(): React.ReactElement {
   // ---------- RENDER ----------
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen mt-16 flex items-center justify-center bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+      <main className="min-h-screen mt-16 flex items-center justify-center bg-linear-to-br from-amber-100 via-orange-50 to-rose-100">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/95 backdrop-blur-sm p-6 rounded-2xl shadow-xl w-full max-w-sm border border-amber-200">
           <div className="text-center mb-4">
             <Sparkles className="mx-auto text-amber-600" size={36} />
@@ -138,15 +213,31 @@ export default function Admin(): React.ReactElement {
 
           <input type="password" placeholder="Enter Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAuth()} className="w-full p-3 border-2 border-amber-200 rounded-xl mb-3 focus:border-amber-400 outline-none" />
 
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAuth} className="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white py-2 rounded-xl font-semibold">Enter</motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAuth} className="w-full bg-linear-to-r from-amber-600 to-orange-600 text-white py-2 rounded-xl font-semibold">Enter</motion.button>
         </motion.div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen mt-16 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 py-10 relative overflow-hidden">
+    <main className="min-h-screen mt-16 bg-linear-to-br from-amber-100 via-orange-50 to-rose-100 py-10 relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <AnimatePresence>
+          {progressState.status !== 'idle' && (
+            <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} className="fixed top-0 left-0 right-0 z-60 px-4 pt-4 pointer-events-none">
+              <div className="mx-auto w-full max-w-lg rounded-2xl bg-white/95 border border-amber-200 shadow-lg backdrop-blur-sm p-3">
+                <div className="text-xs font-semibold text-amber-900">{progressState.text}</div>
+                <div className="h-1.5 mt-2 rounded-full bg-amber-100 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-200 ${progressState.status === 'error' ? 'bg-red-500' : progressState.status === 'success' ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                    style={{ width: `${progressValue}%` }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.header initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-amber-200 rounded-full px-3 py-1.5 shadow-sm mx-auto">
             <Sparkles className="text-amber-600" size={14} />
@@ -180,7 +271,7 @@ export default function Admin(): React.ReactElement {
           </div>
 
           <div className="mt-3 flex gap-3">
-            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} disabled={uploading} type="submit" className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-semibold shadow-sm">{uploading ? 'Uploading...' : 'Upload'}</motion.button>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} disabled={uploading} type="submit" className="px-4 py-2 bg-linear-to-r from-amber-600 to-orange-600 text-white rounded-xl font-semibold shadow-sm">{uploading ? 'Uploading...' : 'Upload'}</motion.button>
 
             <button type="button" onClick={() => { setFormData({ category: 'bridal', price: '' }); (document.querySelector('input[name=image]') as HTMLInputElement | null)?.value && ((document.querySelector('input[name=image]') as HTMLInputElement).value = ''); setMessage(''); }} className="px-4 py-2 bg-white border border-amber-200 rounded-xl text-amber-800">Reset</button>
 
@@ -191,7 +282,7 @@ export default function Admin(): React.ReactElement {
         {/* CATEGORY FILTERS */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-center mb-5 flex-wrap">
           {(['bridal', 'engagement', 'babyshower', 'sider'] as Category[]).map((cat) => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-semibold ${selectedCategory === cat ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow' : 'bg-white/90 border border-amber-200 text-amber-800'}`}>
+            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-semibold ${selectedCategory === cat ? 'bg-linear-to-r from-amber-600 to-orange-600 text-white shadow' : 'bg-white/90 border border-amber-200 text-amber-800'}`}>
               {cat[0].toUpperCase() + cat.slice(1)}
             </button>
           ))}
@@ -269,8 +360,8 @@ export default function Admin(): React.ReactElement {
                     <input type="file" accept="image/*" onChange={(e) => setNewImageFile(e.currentTarget.files?.[0] ?? null)} className="p-2 rounded-xl border-2 border-amber-100" />
 
                     <div className="flex gap-3 mt-4">
-                      <button onClick={() => saveEdit({ category: editingImage.category, price: String(editingImage.price), file: newImageFile })} className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white">Save changes</button>
-                      <button onClick={cancelEdit} className="flex-1 px-3 py-2 rounded-xl bg-white border border-amber-200 text-amber-800">Cancel</button>
+                      <button onClick={() => saveEdit({ category: editingImage.category, price: String(editingImage.price), file: newImageFile })} disabled={savingEdit} className="flex-1 px-3 py-2 rounded-xl bg-linear-to-r from-amber-600 to-orange-600 text-white disabled:opacity-60 disabled:cursor-not-allowed">{savingEdit ? 'Saving...' : 'Save changes'}</button>
+                      <button onClick={cancelEdit} disabled={savingEdit} className="flex-1 px-3 py-2 rounded-xl bg-white border border-amber-200 text-amber-800 disabled:opacity-60 disabled:cursor-not-allowed">Cancel</button>
                     </div>
 
                     {message && <div className={`mt-3 p-2 rounded-md ${message.toLowerCase().includes('success') ? 'bg-amber-50 text-amber-900' : 'bg-red-50 text-red-700'}`}>{message}</div>}
