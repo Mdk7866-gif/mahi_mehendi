@@ -12,6 +12,9 @@ interface ImageType { _id: string; url: string; category: Category; price: numbe
 export default function Admin(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [authenticating, setAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<{ category: Category; price: string }>({ category: 'bridal', price: '' });
   const [message, setMessage] = useState('');
@@ -28,6 +31,24 @@ export default function Admin(): React.ReactElement {
   const [progressValue, setProgressValue] = useState(0);
 
   useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const res = await fetch('/api/admin-auth', { cache: 'no-store' });
+        const data = await res.json();
+        if (data?.authenticated) {
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+    verifySession();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchImages = async () => {
       setProgressState({ status: 'loading', text: 'Loading gallery...' });
       setLoadingImages(true);
@@ -47,7 +68,7 @@ export default function Admin(): React.ReactElement {
     };
 
     fetchImages();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -153,9 +174,27 @@ export default function Admin(): React.ReactElement {
     }
   };
 
-  const handleAuth = () => {
-    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || password === '174216') setIsAuthenticated(true);
-    else alert('Incorrect password');
+  const handleAuth = async () => {
+    setAuthError('');
+    setAuthenticating(true);
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.authenticated) {
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setAuthError(data?.error || 'Incorrect password');
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Unable to authenticate');
+    } finally {
+      setAuthenticating(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -201,6 +240,14 @@ export default function Admin(): React.ReactElement {
   };
 
   // ---------- RENDER ----------
+  if (checkingSession) {
+    return (
+      <main className="min-h-screen mt-16 flex items-center justify-center bg-linear-to-br from-amber-100 via-orange-50 to-rose-100">
+        <div className="text-center text-amber-800">Verifying admin session…</div>
+      </main>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen mt-16 flex items-center justify-center bg-linear-to-br from-amber-100 via-orange-50 to-rose-100">
@@ -212,8 +259,11 @@ export default function Admin(): React.ReactElement {
           </div>
 
           <input type="password" placeholder="Enter Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAuth()} className="w-full p-3 border-2 border-amber-200 rounded-xl mb-3 focus:border-amber-400 outline-none" />
+          {authError && <div className="mb-3 text-sm text-red-600">{authError}</div>}
 
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAuth} className="w-full bg-linear-to-r from-amber-600 to-orange-600 text-white py-2 rounded-xl font-semibold">Enter</motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAuth} disabled={authenticating || !password.trim()} className="w-full bg-linear-to-r from-amber-600 to-orange-600 text-white py-2 rounded-xl font-semibold disabled:opacity-60">
+            {authenticating ? 'Verifying…' : 'Enter'}
+          </motion.button>
         </motion.div>
       </main>
     );
@@ -260,11 +310,11 @@ export default function Admin(): React.ReactElement {
     className="group relative w-full bg-white/95 backdrop-blur-sm border-2 border-amber-200 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:border-amber-300 hover:shadow-xl"
   >
     {/* Gradient overlay on hover */}
-    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-linear-to-r from-amber-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
     <div className="relative px-8 py-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-gradient-to-br from-amber-500 to-pink-500 rounded-xl shadow-md">
+        <div className="p-3 bg-linear-to-br from-amber-500 to-pink-500 rounded-xl shadow-md">
           <Sparkles className="w-7 h-7 text-white" />
         </div>
 
@@ -279,7 +329,7 @@ export default function Admin(): React.ReactElement {
       </div>
 
       {/* Arrow */}
-      <div className="ml-4 flex-shrink-0">
+      <div className="ml-4 shrink-0">
         <div className="p-2 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
           <svg className="w-6 h-6 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -435,7 +485,16 @@ export default function Admin(): React.ReactElement {
         </AnimatePresence>
 
         <div className="mt-6 text-center">
-          <button onClick={() => { setIsAuthenticated(false); setPassword(''); }} className="text-amber-700 underline">Logout</button>
+          <button
+            onClick={async () => {
+              await fetch('/api/admin-auth', { method: 'DELETE' });
+              setIsAuthenticated(false);
+              setPassword('');
+            }}
+            className="text-amber-700 underline"
+          >
+            Logout
+          </button>
         </div>
       </div>
 
