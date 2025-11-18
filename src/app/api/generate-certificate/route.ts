@@ -1,284 +1,441 @@
-import { NextResponse } from 'next/server';
-import { PDFDocument, rgb, degrees } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
-import { v4 as uuidv4 } from 'uuid';
-import { v2 as cloudinary } from 'cloudinary';
-import Certificate from '@/models/Certificate';
-import mongoose from 'mongoose';
-import path from 'path';
-import { readFile } from 'fs/promises';
-import type { UploadApiResponse } from 'cloudinary';
+// src/app/api/generate-certificate/route.ts
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 
-// Connect MongoDB (add your URI in .env)
-const connectDB = async () => {
-  if (mongoose.connections[0].readyState) return;
-  await mongoose.connect(process.env.MONGODB_URI!);
-};
+export const runtime = 'nodejs';
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-type AssetCache = {
-  greatVibes: Uint8Array;
-  playfair: Uint8Array;
-  playfairBold: Uint8Array;
-  borderImage: Uint8Array;
-};
-
-let cachedAssets: AssetCache | null = null;
-
-const loadAssets = async (): Promise<AssetCache> => {
-  if (cachedAssets) return cachedAssets;
-
-  const fontsDir = path.join(process.cwd(), 'src', 'lib', 'fonts');
-  const publicDir = path.join(process.cwd(), 'public');
-
-  const [greatVibes, playfair, playfairBold, borderImage] = await Promise.all([
-    readFile(path.join(fontsDir, 'GreatVibes-Regular.ttf')),
-    readFile(path.join(fontsDir, 'PlayfairDisplay-Regular.ttf')),
-    readFile(path.join(fontsDir, 'PlayfairDisplay-Bold.ttf')),
-    readFile(path.join(publicDir, 'mehndi-border.png')),
-  ]);
-
-  cachedAssets = { greatVibes, playfair, playfairBold, borderImage };
-  return cachedAssets;
-};
-
-const uploadCertificatePhoto = (buffer: Buffer): Promise<UploadApiResponse> => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        {
-          folder: 'mehendi-certificates/students',
-          resource_type: 'image',
-        },
-        (error, result) => {
-          if (error || !result) {
-            reject(error ?? new Error('Cloudinary upload failed'));
-          } else {
-            resolve(result);
-          }
+// Helper function to read EXIF orientation from JPEG
+function getExifOrientation(buffer: Uint8Array): number {
+  const view = new DataView(buffer.buffer);
+  
+  // Check for JPEG signature
+  if (view.getUint16(0, false) !== 0xFFD8) {
+    return 1; // Not a JPEG, return default orientation
+  }
+  
+  const length = view.byteLength;
+  let offset = 2;
+  
+  while (offset < length) {
+    if (view.getUint16(offset + 2, false) <= 8) return 1;
+    const marker = view.getUint16(offset, false);
+    offset += 2;
+    
+    // Check for APP1 marker (0xFFE1) which contains EXIF data
+    if (marker === 0xFFE1) {
+      const exifLength = view.getUint16(offset, false);
+      offset += 2;
+      
+      // Check for "Exif" string
+      if (view.getUint32(offset, false) !== 0x45786966) {
+        return 1;
+      }
+      
+      offset += 6; // Skip "Exif\0\0"
+      
+      // Determine byte order (II = little-endian, MM = big-endian)
+      const littleEndian = view.getUint16(offset, false) === 0x4949;
+      offset += 2;
+      
+      // Skip over the TIFF header
+      offset += 2;
+      const ifdOffset = view.getUint32(offset, littleEndian);
+      offset += ifdOffset - 2;
+      
+      // Read number of directory entries
+      const tags = view.getUint16(offset, littleEndian);
+      offset += 2;
+      
+      // Search for orientation tag (0x0112)
+      for (let i = 0; i < tags; i++) {
+        const tag = view.getUint16(offset + i * 12, littleEndian);
+        if (tag === 0x0112) {
+          // Found orientation tag
+          return view.getUint16(offset + i * 12 + 8, littleEndian);
         }
-      )
-      .end(buffer);
-  });
-};
+      }
+    } else {
+      // Skip to next marker
+      const markerLength = view.getUint16(offset, false);
+      offset += markerLength;
+    }
+  }
+  
+  return 1; // Default orientation
+}
 
 export async function POST(req: Request) {
-  await connectDB();
+  try {
+    // parse incoming multipart/form-data
+    const form = await req.formData();
 
-  const contentType = req.headers.get('content-type') ?? '';
+    const name = (form.get('name') as string) || 'Learner Name';
+    const courseName = (form.get('courseName') as string) || 'Course Name';
+    const completionDate = (form.get('completionDate') as string) || new Date().toLocaleDateString();
 
-  let name: string | null = null;
-  let courseName: string | null = null;
-  let completionDate: string | null = null;
-  let photoUrl: string | null = null;
-  let photoBuffer: Buffer | null = null;
-  let photoMime: string | null = null;
+    // photo from formData (may be null)
+    const photo = form.get('photo') as Blob | null;
 
-  if (contentType.includes('multipart/form-data')) {
-    const formData = await req.formData();
-    name = (formData.get('name') as string | null)?.trim() ?? null;
-    courseName = (formData.get('courseName') as string | null)?.trim() ?? null;
-    completionDate = (formData.get('completionDate') as string | null)?.trim() ?? null;
-    const file = formData.get('photo');
-    if (file && file instanceof File) {
-      const arrayBuffer = await file.arrayBuffer();
-      photoBuffer = Buffer.from(arrayBuffer);
-      photoMime = file.type || 'image/jpeg';
-      const uploaded = await uploadCertificatePhoto(photoBuffer);
-      photoUrl = uploaded.secure_url ?? null;
+    // Create a new PDF
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([1224, 792]); // landscape A4-like dimensions (px)
+    const { width, height } = page.getSize();
+
+    // Background (soft cream)
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width,
+      height,
+      color: rgb(0.99, 0.97, 0.95),
+    });
+
+    // Draw decorative border
+    const borderPadding = 36;
+    page.drawRectangle({
+      x: borderPadding,
+      y: borderPadding,
+      width: width - borderPadding * 2,
+      height: height - borderPadding * 2,
+      borderColor: rgb(0.9, 0.6, 0.1),
+      borderWidth: 6,
+      color: undefined,
+    });
+
+    // Inner decorative border
+    page.drawRectangle({
+      x: borderPadding + 12,
+      y: borderPadding + 12,
+      width: width - (borderPadding + 12) * 2,
+      height: height - (borderPadding + 12) * 2,
+      borderColor: rgb(0.85, 0.7, 0.3),
+      borderWidth: 2,
+      color: undefined,
+    });
+
+    // Load fonts
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+
+    // Title: Certificate of Completion
+    const title = 'Certificate of Completion';
+    const titleSize = 42;
+    const titleWidth = fontBold.widthOfTextAtSize(title, titleSize);
+    page.drawText(title, {
+      x: (width - titleWidth) / 2,
+      y: height - 130,
+      size: titleSize,
+      font: fontBold,
+      color: rgb(0.42, 0.16, 0.08),
+    });
+
+    // Decorative line under title
+    page.drawLine({
+      start: { x: width / 2 - 150, y: height - 145 },
+      end: { x: width / 2 + 150, y: height - 145 },
+      thickness: 2,
+      color: rgb(0.9, 0.6, 0.1),
+    });
+
+    // Subtitle / awarding line
+    const awardedLine = 'This certificate is proudly presented to';
+    const awardedSize = 14;
+    const awardedWidth = font.widthOfTextAtSize(awardedLine, awardedSize);
+    page.drawText(awardedLine, {
+      x: (width - awardedWidth) / 2,
+      y: height - 190,
+      size: awardedSize,
+      font,
+      color: rgb(0.25, 0.13, 0.06),
+    });
+
+    // Learner name (prominent)
+    const nameSize = 32;
+    const nameWidth = fontBold.widthOfTextAtSize(name, nameSize);
+    page.drawText(name, {
+      x: (width - nameWidth) / 2,
+      y: height - 240,
+      size: nameSize,
+      font: fontBold,
+      color: rgb(0.12, 0.08, 0.04),
+    });
+
+    // Name underline
+    page.drawLine({
+      start: { x: width / 2 - nameWidth / 2 - 20, y: height - 250 },
+      end: { x: width / 2 + nameWidth / 2 + 20, y: height - 250 },
+      thickness: 1.5,
+      color: rgb(0.85, 0.7, 0.3),
+    });
+
+    // Course completion text
+    const courseText = `For successfully completing the`;
+    const courseSize = 13;
+    const courseWidth = font.widthOfTextAtSize(courseText, courseSize);
+    page.drawText(courseText, {
+      x: (width - courseWidth) / 2,
+      y: height - 290,
+      size: courseSize,
+      font,
+      color: rgb(0.2, 0.1, 0.05),
+    });
+
+    // Course name (prominent)
+    const courseNameSize = 18;
+    const courseNameWidth = fontBold.widthOfTextAtSize(courseName, courseNameSize);
+    page.drawText(courseName, {
+      x: (width - courseNameWidth) / 2,
+      y: height - 320,
+      size: courseNameSize,
+      font: fontBold,
+      color: rgb(0.42, 0.16, 0.08),
+    });
+
+    // Achievement text
+    const achievementText = 'Demonstrating dedication, creativity, and mastery';
+    const achievementSize = 12;
+    const achievementWidth = fontItalic.widthOfTextAtSize(achievementText, achievementSize);
+    page.drawText(achievementText, {
+      x: (width - achievementWidth) / 2,
+      y: height - 350,
+      size: achievementSize,
+      font: fontItalic,
+      color: rgb(0.3, 0.15, 0.07),
+    });
+
+    // Additional achievement line
+    const achievement2 = 'in the art of elegant henna design';
+    const achievement2Width = fontItalic.widthOfTextAtSize(achievement2, achievementSize);
+    page.drawText(achievement2, {
+      x: (width - achievement2Width) / 2,
+      y: height - 370,
+      size: achievementSize,
+      font: fontItalic,
+      color: rgb(0.3, 0.15, 0.07),
+    });
+
+    // Recognition statement
+    const recognitionText = 'This achievement represents hours of dedicated practice, attention to detail,';
+    const recognitionSize = 10;
+    const recognitionWidth = font.widthOfTextAtSize(recognitionText, recognitionSize);
+    page.drawText(recognitionText, {
+      x: (width - recognitionWidth) / 2,
+      y: height - 410,
+      size: recognitionSize,
+      font,
+      color: rgb(0.35, 0.17, 0.08),
+    });
+
+    const recognition2 = 'and a commitment to preserving the timeless tradition of mehendi artistry.';
+    const recognition2Width = font.widthOfTextAtSize(recognition2, recognitionSize);
+    page.drawText(recognition2, {
+      x: (width - recognition2Width) / 2,
+      y: height - 425,
+      size: recognitionSize,
+      font,
+      color: rgb(0.35, 0.17, 0.08),
+    });
+
+    // Completion date (bottom-left)
+    const dateLabel = 'Date of Completion';
+    const dateLabelWidth = font.widthOfTextAtSize(dateLabel, 10);
+    page.drawText(dateLabel, {
+      x: borderPadding + 40,
+      y: borderPadding + 75,
+      size: 10,
+      font,
+      color: rgb(0.3, 0.15, 0.07),
+    });
+
+    const dateText = completionDate;
+    page.drawText(dateText, {
+      x: borderPadding + 40,
+      y: borderPadding + 50,
+      size: 13,
+      font: fontBold,
+      color: rgb(0.15, 0.07, 0.03),
+    });
+
+    // Date signature line
+    page.drawLine({
+      start: { x: borderPadding + 36, y: borderPadding + 45 },
+      end: { x: borderPadding + 180, y: borderPadding + 45 },
+      thickness: 1,
+      color: rgb(0.2, 0.1, 0.05),
+    });
+
+    // Instructor signature section (bottom-right)
+    const sigLabel = 'Instructor Signature';
+    const sigLabelSize = 10;
+    const sigLabelWidth = font.widthOfTextAtSize(sigLabel, sigLabelSize);
+    page.drawText(sigLabel, {
+      x: width - borderPadding - 190,
+      y: borderPadding + 75,
+      size: sigLabelSize,
+      font,
+      color: rgb(0.3, 0.15, 0.07),
+    });
+
+    const instructorName = 'Mahi Mehendi';
+    const instructorSize = 13;
+    const instructorWidth = fontBold.widthOfTextAtSize(instructorName, instructorSize);
+    page.drawText(instructorName, {
+      x: width - borderPadding - 40 - instructorWidth,
+      y: borderPadding + 50,
+      size: instructorSize,
+      font: fontBold,
+      color: rgb(0.15, 0.07, 0.03),
+    });
+
+    // Signature line
+    page.drawLine({
+      start: { x: width - borderPadding - 200, y: borderPadding + 45 },
+      end: { x: width - borderPadding - 36, y: borderPadding + 45 },
+      thickness: 1,
+      color: rgb(0.2, 0.1, 0.05),
+    });
+
+    // If a photo was uploaded, embed it and place it on the right side
+    if (photo && (photo.size ?? 0) > 0) {
+      const arrayBuffer = await photo.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+
+      // Determine type (we try png first, then jpg)
+      const mime = (photo as any).type || '';
+      let embeddedImage;
+      try {
+        if (mime.includes('png')) {
+          embeddedImage = await pdfDoc.embedPng(bytes);
+        } else {
+          // fallback to jpg for other types (jpeg, jpg)
+          embeddedImage = await pdfDoc.embedJpg(bytes);
+        }
+      } catch (err) {
+        // if embedding fails, skip image
+        console.warn('Image embedding failed:', err);
+        embeddedImage = undefined;
+      }
+
+      if (embeddedImage) {
+        const imgDims = embeddedImage.scale(1);
+        
+        // Target dimensions - keep aspect ratio
+        const targetW = 180;
+        const targetH = (imgDims.height / imgDims.width) * targetW;
+        
+        // Calculate position
+        const frameX = width - borderPadding - targetW - 50;
+        const frameY = height - borderPadding - targetH - 130;
+        
+        // Draw decorative frame around photo
+        page.drawRectangle({
+          x: frameX - 6,
+          y: frameY - 6,
+          width: targetW + 12,
+          height: targetH + 12,
+          borderColor: rgb(0.9, 0.6, 0.1),
+          borderWidth: 3,
+        });
+
+        // Draw the image - simple, no rotation
+        page.drawImage(embeddedImage, {
+          x: frameX,
+          y: frameY,
+          width: targetW,
+          height: targetH,
+        });
+
+        // Label under image
+        const label = 'Certificate Holder';
+        const labelW = font.widthOfTextAtSize(label, 10);
+        page.drawText(label, {
+          x: frameX + (targetW - labelW) / 2,
+          y: frameY - 20,
+          size: 10,
+          font,
+          color: rgb(0.2, 0.1, 0.05),
+        });
+      }
+    } else {
+      // draw placeholder box for photo
+      const targetW = 180;
+      const targetH = 180;
+      const imgX = width - borderPadding - targetW - 50;
+      const imgY = height - borderPadding - targetH - 130;
+      
+      // Decorative frame
+      page.drawRectangle({
+        x: imgX - 6,
+        y: imgY - 6,
+        width: targetW + 12,
+        height: targetH + 12,
+        borderColor: rgb(0.9, 0.6, 0.1),
+        borderWidth: 3,
+      });
+
+      page.drawRectangle({
+        x: imgX,
+        y: imgY,
+        width: targetW,
+        height: targetH,
+        borderColor: rgb(0.85, 0.82, 0.8),
+        borderWidth: 2,
+        color: rgb(0.98, 0.96, 0.94),
+      });
+
+      const hint = 'Photo';
+      const hintW = font.widthOfTextAtSize(hint, 14);
+      page.drawText(hint, {
+        x: imgX + (targetW - hintW) / 2,
+        y: imgY + targetH / 2 - 7,
+        size: 14,
+        font,
+        color: rgb(0.6, 0.55, 0.5),
+      });
     }
-  } else {
-    const body = await req.json();
-    name = typeof body.name === 'string' ? body.name : null;
-    courseName = typeof body.courseName === 'string' ? body.courseName : null;
-    completionDate = typeof body.completionDate === 'string' ? body.completionDate : null;
-    photoUrl = typeof body.photoUrl === 'string' ? body.photoUrl : null;
+
+    // Brand footer with enhanced styling
+    const brand = 'Mahi Mehendi - Elegant Henna Designs for Every Occasion';
+    const brandSize = 10;
+    const brandW = font.widthOfTextAtSize(brand, brandSize);
+    page.drawText(brand, {
+      x: (width - brandW) / 2,
+      y: borderPadding + 18,
+      size: brandSize,
+      font: fontBold,
+      color: rgb(0.42, 0.16, 0.08),
+    });
+
+    const contact = 'mahi.mehendi@gmail.com';
+    const contactW = font.widthOfTextAtSize(contact, 9);
+    page.drawText(contact, {
+      x: (width - contactW) / 2,
+      y: borderPadding + 5,
+      size: 9,
+      font,
+      color: rgb(0.4, 0.2, 0.1),
+    });
+
+    // finalize PDF
+    const pdfBytes = await pdfDoc.save();
+
+    // Set filename (safe sanitized)
+    const safeName = name.replace(/[^a-z0-9_\- ]/gi, '').replace(/\s+/g, '-');
+    const filename = `Mahi-Mehendi-Certificate-${safeName || 'certificate'}.pdf`;
+
+    return new Response(pdfBytes, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Length': String(pdfBytes.length),
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (err) {
+    console.error('Certificate generation error:', err);
+    return new Response(
+      JSON.stringify({ error: 'Failed to generate certificate', detail: (err as any)?.message || String(err) }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-
-  if (!name || !completionDate || (!photoUrl && !photoBuffer)) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
-
-  const assets = await loadAssets();
-
-  const certificateNumber = uuidv4().slice(0, 8).toUpperCase();
-
-  const pdfDoc = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
-
-  const greatVibesFont = await pdfDoc.embedFont(assets.greatVibes);
-  const playfairFont = await pdfDoc.embedFont(assets.playfair);
-  const playfairBoldFont = await pdfDoc.embedFont(assets.playfairBold);
-
-  let photoBytes: Uint8Array;
-  let detectedMime = photoMime ?? '';
-
-  if (photoBuffer) {
-    photoBytes = new Uint8Array(photoBuffer);
-  } else {
-    const photoResponse = await fetch(photoUrl!);
-    if (!photoResponse.ok) {
-      return NextResponse.json({ error: 'Unable to fetch photo' }, { status: 400 });
-    }
-    const photoArrayBuffer = await photoResponse.arrayBuffer();
-    photoBytes = new Uint8Array(photoArrayBuffer);
-    detectedMime = photoResponse.headers.get('content-type') ?? '';
-  }
-
-  const photoImage = detectedMime.includes('png')
-    ? await pdfDoc.embedPng(photoBytes)
-    : await pdfDoc.embedJpg(photoBytes);
-
-  const borderImg = await pdfDoc.embedPng(assets.borderImage);
-
-  const page = pdfDoc.addPage([842, 595]); // A4 landscape for premium feel
-  const { width, height } = page.getSize();
-
-  // Subtle beige background
-  page.drawRectangle({
-    x: 0, y: 0, width, height,
-    color: rgb(0.98, 0.95, 0.90),
-  });
-
-  // Watermark mehendi pattern (very light)
-  page.drawImage(borderImg, {
-    x: width / 2 - 200,
-    y: height / 2 - 200,
-    width: 400,
-    height: 400,
-    opacity: 0.07,
-  });
-
-  // Mehendi corner borders (four corners)
-  const cornerSize = 150;
-  page.drawImage(borderImg, { x: 30, y: height - cornerSize - 30, width: cornerSize, height: cornerSize });
-  page.drawImage(borderImg, { x: width - cornerSize - 30, y: height - cornerSize - 30, width: cornerSize, height: cornerSize, rotate: degrees(90) });
-  page.drawImage(borderImg, { x: width - cornerSize - 30, y: 30, width: cornerSize, height: cornerSize, rotate: degrees(180) });
-  page.drawImage(borderImg, { x: 30, y: 30, width: cornerSize, height: cornerSize, rotate: degrees(270) });
-
-  // Title
-  page.drawText('Certificate of Completion', {
-    x: width / 2 - 220,
-    y: height - 140,
-    size: 48,
-    font: greatVibesFont,
-    color: rgb(0.6, 0.3, 0.1), // maroon-brown
-  });
-
-  // Proudly Awarded To
-  page.drawText('This is to certify that', {
-    x: width / 2 - 140,
-    y: height - 210,
-    size: 24,
-    font: playfairFont,
-    color: rgb(0.4, 0.2, 0),
-  });
-
-  // Learner's Name - BIG & CURSIVE
-  page.drawText(name, {
-    x: width / 2 - greatVibesFont.widthOfTextAtSize(name, 72) / 2,
-    y: height - 280,
-    size: 72,
-    font: greatVibesFont,
-    color: rgb(0.72, 0.45, 0.20), // golden-maroon
-  });
-
-  // Course
-  page.drawText(`has successfully completed the`, {
-    x: width / 2 - 160,
-    y: height - 340,
-    size: 20,
-    font: playfairFont,
-    color: rgb(0.3, 0.1, 0.1),
-  });
-
-  page.drawText(courseName || 'Professional Mehendi Artistry Course', {
-    x: width / 2 - 220,
-    y: height - 380,
-    size: 28,
-    font: playfairBoldFont,
-    color: rgb(0.6, 0.3, 0.1),
-  });
-
-  page.drawText(`on ${new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, {
-    x: width / 2 - 160,
-    y: height - 430,
-    size: 20,
-    font: playfairFont,
-    color: rgb(0.3, 0.1, 0.1),
-  });
-
-  // Circular Photo with golden border
-  const photoSize = 150;
-  page.drawEllipse({
-    x: width / 2,
-    y: height / 2 + 50,
-    xScale: photoSize / 2,
-    yScale: photoSize / 2,
-    borderColor: rgb(0.8, 0.6, 0.2),
-    borderWidth: 8,
-  });
-  page.drawImage(photoImage, {
-    x: width / 2 - photoSize / 2,
-    y: height / 2 + 50 - photoSize / 2,
-    width: photoSize,
-    height: photoSize,
-  });
-
-  // Signature
-  page.drawText('Mahi Mehendi Artistry', {
-    x: width / 2 + 100,
-    y: height / 2 - 120,
-    size: 36,
-    font: greatVibesFont,
-    color: rgb(0.6, 0.3, 0.1),
-  });
-  page.drawLine({
-    start: { x: width / 2 + 80, y: height / 2 - 130 },
-    end: { x: width / 2 + 300, y: height / 2 - 130 },
-    thickness: 2,
-    color: rgb(0.4, 0.2, 0.1),
-  });
-
-  // Certificate Number
-  page.drawText(`Certificate No: ${certificateNumber}`, {
-    x: 60,
-    y: 60,
-    size: 14,
-    font: playfairFont,
-    color: rgb(0.5, 0.3, 0.1),
-  });
-
-  const pdfBytes = await pdfDoc.save();
-  const pdfBuffer = Buffer.from(pdfBytes);
-
-  // Bonus: Upload PDF to Cloudinary + Save to DB
-  const pdfBase64 = pdfBuffer.toString('base64');
-  const pdfDataUri = `data:application/pdf;base64,${pdfBase64}`;
-  const uploadRes = await cloudinary.uploader.upload(pdfDataUri, {
-    folder: 'mehendi-certificates',
-    public_id: `certificate-${certificateNumber}`,
-    resource_type: 'raw',
-  });
-
-  await Certificate.create({
-    certificateNumber,
-    name,
-    courseName: courseName || 'Professional Mehendi Course',
-    completionDate,
-    photoUrl: photoUrl ?? '',
-    pdfUrl: uploadRes.secure_url,
-  });
-
-  return new NextResponse(pdfBuffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="Mahi-Mehendi-Certificate-${name.replace(/\s+/g, '-')}.pdf"`,
-    },
-  });
 }
