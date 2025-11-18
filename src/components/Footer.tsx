@@ -6,7 +6,7 @@ import {
   Sparkles, 
   Phone, 
   Mail, 
-  Map,      // Map icon (Improved)
+  Map,      
   Instagram 
 } from 'lucide-react';
 
@@ -45,7 +45,7 @@ export default function Footer(): React.ReactElement {
               Elegant henna designs for every occasion.
             </p>
 
-            {/* Instagram Button - Full Width Official Colors */}
+            {/* Instagram Button - MATCHING SITE COLORS (Full Width) */}
             <div className="w-full mt-3">
               <motion.a
                 href="https://instagram.com/mehendi_by_mahii_2"
@@ -53,12 +53,13 @@ export default function Footer(): React.ReactElement {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 
                            w-full px-6 py-2 
-                           bg-gradient-to-r 
-                           from-[#F58529] via-[#DD2A7B] via-[#8134AF] to-[#515BD4]
+                           bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500
                            text-white rounded-full text-sm font-medium 
-                           shadow-md hover:shadow-lg transition-all"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                           shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-0.5
+                           ring-1 ring-amber-200/40"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                aria-label="Follow Mahi Mehendi on Instagram"
               >
                 <Instagram size={18} />
                 <span>Follow Us</span>
