@@ -7,7 +7,7 @@ import { Sparkles, FileDown, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function CertificateGeneration() {
   const [name, setName] = useState('');
-  const [courseName, setCourseName] = useState('');
+  const [courseName, setCourseName] = useState('Mehendi Mastery Course');
   const [completionDate, setCompletionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
