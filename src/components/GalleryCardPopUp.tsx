@@ -46,7 +46,7 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
   const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
   const lastPan = useRef<{ x: number; y: number } | null>(null);
   const isPanning = useRef(false);
-  const lastClick = useRef<number>(0);
+  
 
   const MIN_SCALE = 1;
   const MAX_SCALE = 3;

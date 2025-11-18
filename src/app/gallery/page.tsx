@@ -109,7 +109,7 @@ export default function Gallery(): React.ReactElement {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div key={selectedCategory} variants={containerVariants} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {filtered.map((img, i) => (
+              {filtered.map((img) => (
                 <motion.div key={img._id} variants={itemVariants} whileHover={{ scale: 1.02 }} className="group bg-white/95 rounded-2xl shadow-sm border border-amber-200 overflow-hidden cursor-pointer">
 
                   {/* compact image height (like Admin) */}

@@ -273,7 +273,22 @@ export default function Admin(): React.ReactElement {
           <div className="mt-3 flex gap-3">
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} disabled={uploading} type="submit" className="px-4 py-2 bg-linear-to-r from-amber-600 to-orange-600 text-white rounded-xl font-semibold shadow-sm">{uploading ? 'Uploading...' : 'Upload'}</motion.button>
 
-            <button type="button" onClick={() => { setFormData({ category: 'bridal', price: '' }); (document.querySelector('input[name=image]') as HTMLInputElement | null)?.value && ((document.querySelector('input[name=image]') as HTMLInputElement).value = ''); setMessage(''); }} className="px-4 py-2 bg-white border border-amber-200 rounded-xl text-amber-800">Reset</button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({ category: 'bridal', price: '' });
+
+                // clear file input safely (don't query twice)
+                const fileInput = document.querySelector<HTMLInputElement>('input[name="image"]');
+                if (fileInput) fileInput.value = '';
+
+                setMessage('');
+              }}
+              className="px-4 py-2 bg-white border border-amber-200 rounded-xl text-amber-800"
+            >
+              Reset
+            </button>
+
 
             <div className="ml-auto text-xs text-amber-700">{message && <span className="font-medium">{message}</span>}</div>
           </div>
@@ -339,7 +354,7 @@ export default function Admin(): React.ReactElement {
                   <button onClick={cancelEdit} className="text-amber-700">Close</button>
                 </div>
 
-                <div className="mt-4 overflow-auto"> 
+                <div className="mt-4 overflow-auto">
                   <div className="w-full h-56 relative rounded-lg overflow-hidden border border-amber-100">
                     <Image src={editingImage.url} alt="editing" fill className="object-cover" />
                   </div>

@@ -20,13 +20,14 @@ interface ServiceCardProps {
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
-};
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5 } // removed 'ease' string
+    }
+  };
+  
 
 export default function ServiceCard({
   id,

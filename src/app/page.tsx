@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, Users, Award, Heart, Clock, CheckCircle2, ArrowRight, Star, Calendar } from 'lucide-react';
+import { Sparkles, Users, Award, Clock, CheckCircle2, ArrowRight, Star, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const containerVariants = {
@@ -19,12 +19,13 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
+    transition: { duration: 0.5 } // removed 'ease' string to satisfy TS
   }
 };
+
 
 const heroVariants = {
   hidden: { opacity: 0 },
@@ -91,8 +92,8 @@ export default function HomePage(): React.ReactElement {
 
   const imgWrapperRef = useRef<HTMLDivElement | null>(null);
   const transformRef = useRef({ scale: 1, tx: 0, ty: 0 });
-  const lastTouchRef = useRef<any>(null);
-  const isPanningRef = useRef(false);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const isPanningRef = useRef<boolean>(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -184,6 +185,55 @@ export default function HomePage(): React.ReactElement {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [modalOpen, closeModal]);
+
+  // Wheel zoom handler
+  const onModalWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    transformRef.current.scale = Math.min(3, Math.max(1, transformRef.current.scale * delta));
+    applyTransform();
+  }, [applyTransform]);
+
+  // Mouse down / move / up for panning
+  const onMouseDown = (e: React.MouseEvent) => {
+    isPanningRef.current = true;
+    lastMouseRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isPanningRef.current || !lastMouseRef.current) return;
+    const dx = e.clientX - lastMouseRef.current.x;
+    const dy = e.clientY - lastMouseRef.current.y;
+    lastMouseRef.current = { x: e.clientX, y: e.clientY };
+    transformRef.current.tx += dx;
+    transformRef.current.ty += dy;
+    applyTransform();
+  };
+
+  const onMouseUp = () => {
+    isPanningRef.current = false;
+    lastMouseRef.current = null;
+  };
+
+ // Touch panning (basic)
+const onTouchStart = (e: React.TouchEvent) => {
+  if (e.touches.length === 1) {
+    const t = e.touches[0];
+    lastTouchRef.current = { x: t.clientX, y: t.clientY };
+  }
+};
+
+const onTouchMove = (e: React.TouchEvent) => {
+  if (!lastTouchRef.current || e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const dx = t.clientX - lastTouchRef.current.x;
+  const dy = t.clientY - lastTouchRef.current.y;
+  lastTouchRef.current = { x: t.clientX, y: t.clientY };
+  transformRef.current.tx += dx;
+  transformRef.current.ty += dy;
+  applyTransform();
+};
+
 
   if (loading) {
     return (
@@ -356,7 +406,7 @@ export default function HomePage(): React.ReactElement {
             viewport={{ once: true }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
           >
-            {services.map((service, index) => (
+            {services.map((service) => (
               <motion.article
                 key={service.id}
                 variants={itemVariants}
@@ -631,6 +681,56 @@ export default function HomePage(): React.ReactElement {
         />
       </div>
 
+      {/* Image Modal (uses modalSrc, imageScale, lastTouchRef, isPanningRef, lastMouseRef) */}
+      <AnimatePresence>
+        {modalOpen && modalSrc && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onWheel={onModalWheel}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
+            <div className="absolute top-6 right-6 z-60">
+              <button
+                onClick={closeModal}
+                className="bg-white/10 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 text-white hover:bg-white/20"
+                aria-label="Close image"
+              >
+                Close
+              </button>
+            </div>
+
+            <div
+              ref={imgWrapperRef}
+              className="max-w-[90vw] max-h-[85vh] touch-pan-y"
+              onMouseDown={onMouseDown}
+              onMouseUp={onMouseUp}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              role="presentation"
+              style={{ transition: 'transform 0.05s linear' }}
+            >
+              <Image
+                src={modalSrc}
+                alt="preview"
+                width={1200}
+                height={900}
+                className="object-contain"
+                style={{ userSelect: 'none', pointerEvents: 'none' }}
+              />
+            </div>
+
+            {/* zoom indicator */}
+            <div className="absolute bottom-6 left-6 text-white bg-black/30 px-3 py-1 rounded-md text-sm">
+              {Math.round(imageScale * 100)}%
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

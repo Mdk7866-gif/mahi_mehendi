@@ -21,9 +21,11 @@ export default function Contact(): React.ReactElement {
     preferredDate: '',
     message: '',
   });
-  const [submitted, setSubmitted] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // <-- added submitted state to fix the build error
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 450);
@@ -40,6 +42,7 @@ export default function Contact(): React.ReactElement {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+    setSubmitted(false);
 
     try {
       const res = await fetch('/api/contact', {
@@ -94,6 +97,12 @@ export default function Contact(): React.ReactElement {
             {/* Left: Contact card (form) */}
             <div className="order-2 lg:order-1">
               <form onSubmit={handleSubmit} className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 sm:p-6 shadow-md border border-amber-200">
+                {submitted && (
+                  <div className="mb-4 p-3 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100">
+                    Thank you — your message has been sent. We'll contact you shortly.
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-amber-900 text-sm font-semibold mb-1">Name *</label>
