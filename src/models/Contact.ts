@@ -1,3 +1,5 @@
+// src/models/Contact.ts
+// Contact model for the website
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IContact extends Document {

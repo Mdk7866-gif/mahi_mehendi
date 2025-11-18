@@ -1,3 +1,5 @@
+// src/app/contact/page.tsx
+// Contact page for the website
 'use client';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
