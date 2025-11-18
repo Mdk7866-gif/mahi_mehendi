@@ -1,83 +1,23 @@
 // src/app/api/generate-certificate/route.ts
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
+import sharp from 'sharp'; // For auto-correcting image orientation
 
 export const runtime = 'nodejs';
 
-// Helper function to read EXIF orientation from JPEG
-function getExifOrientation(buffer: Uint8Array): number {
-  const view = new DataView(buffer.buffer);
-  
-  // Check for JPEG signature
-  if (view.getUint16(0, false) !== 0xFFD8) {
-    return 1; // Not a JPEG, return default orientation
-  }
-  
-  const length = view.byteLength;
-  let offset = 2;
-  
-  while (offset < length) {
-    if (view.getUint16(offset + 2, false) <= 8) return 1;
-    const marker = view.getUint16(offset, false);
-    offset += 2;
-    
-    // Check for APP1 marker (0xFFE1) which contains EXIF data
-    if (marker === 0xFFE1) {
-      const exifLength = view.getUint16(offset, false);
-      offset += 2;
-      
-      // Check for "Exif" string
-      if (view.getUint32(offset, false) !== 0x45786966) {
-        return 1;
-      }
-      
-      offset += 6; // Skip "Exif\0\0"
-      
-      // Determine byte order (II = little-endian, MM = big-endian)
-      const littleEndian = view.getUint16(offset, false) === 0x4949;
-      offset += 2;
-      
-      // Skip over the TIFF header
-      offset += 2;
-      const ifdOffset = view.getUint32(offset, littleEndian);
-      offset += ifdOffset - 2;
-      
-      // Read number of directory entries
-      const tags = view.getUint16(offset, littleEndian);
-      offset += 2;
-      
-      // Search for orientation tag (0x0112)
-      for (let i = 0; i < tags; i++) {
-        const tag = view.getUint16(offset + i * 12, littleEndian);
-        if (tag === 0x0112) {
-          // Found orientation tag
-          return view.getUint16(offset + i * 12 + 8, littleEndian);
-        }
-      }
-    } else {
-      // Skip to next marker
-      const markerLength = view.getUint16(offset, false);
-      offset += markerLength;
-    }
-  }
-  
-  return 1; // Default orientation
-}
-
 export async function POST(req: Request) {
   try {
-    // parse incoming multipart/form-data
+    // Parse incoming multipart/form-data
     const form = await req.formData();
-
     const name = (form.get('name') as string) || 'Learner Name';
     const courseName = (form.get('courseName') as string) || 'Course Name';
     const completionDate = (form.get('completionDate') as string) || new Date().toLocaleDateString();
 
-    // photo from formData (may be null)
+    // Photo from formData (may be null)
     const photo = form.get('photo') as Blob | null;
 
     // Create a new PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([1224, 792]); // landscape A4-like dimensions (px)
+    const page = pdfDoc.addPage([1224, 792]); // Landscape A4-like dimensions (px)
     const { width, height } = page.getSize();
 
     // Background (soft cream)
@@ -295,49 +235,53 @@ export async function POST(req: Request) {
       color: rgb(0.2, 0.1, 0.05),
     });
 
-    // If a photo was uploaded, embed it and place it on the right side
+    // If a photo was uploaded, process it with Sharp to auto-correct orientation, then embed
     if (photo && (photo.size ?? 0) > 0) {
       const arrayBuffer = await photo.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
 
-      // Determine type (we try png first, then jpg)
-      const mime = (photo as any).type || '';
       let embeddedImage;
       try {
+        // Use Sharp to auto-rotate based on EXIF (removes orientation tag after correction)
+        const correctedBuffer = await sharp(bytes)
+          .rotate() // Auto-corrects orientation
+          .toBuffer();
+
+        const mime = (photo as any).type || '';
         if (mime.includes('png')) {
-          embeddedImage = await pdfDoc.embedPng(bytes);
+          embeddedImage = await pdfDoc.embedPng(correctedBuffer);
         } else {
-          // fallback to jpg for other types (jpeg, jpg)
-          embeddedImage = await pdfDoc.embedJpg(bytes);
+          embeddedImage = await pdfDoc.embedJpg(correctedBuffer);
         }
       } catch (err) {
-        // if embedding fails, skip image
-        console.warn('Image embedding failed:', err);
+        console.warn('Image processing failed:', err);
         embeddedImage = undefined;
       }
 
       if (embeddedImage) {
         const imgDims = embeddedImage.scale(1);
-        
-        // Target dimensions - keep aspect ratio
+
+        // Base target dimensions (now with corrected image, no need for rotation logic)
         const targetW = 180;
         const targetH = (imgDims.height / imgDims.width) * targetW;
-        
-        // Calculate position
+
+        // Position for frame (fixed, no orientation adjustments needed)
         const frameX = width - borderPadding - targetW - 50;
         const frameY = height - borderPadding - targetH - 130;
-        
+        const frameW = targetW;
+        const frameH = targetH;
+
         // Draw decorative frame around photo
         page.drawRectangle({
           x: frameX - 6,
           y: frameY - 6,
-          width: targetW + 12,
-          height: targetH + 12,
+          width: frameW + 12,
+          height: frameH + 12,
           borderColor: rgb(0.9, 0.6, 0.1),
           borderWidth: 3,
         });
 
-        // Draw the image - simple, no rotation
+        // Draw the image (no rotation needed – Sharp fixed it)
         page.drawImage(embeddedImage, {
           x: frameX,
           y: frameY,
@@ -349,7 +293,7 @@ export async function POST(req: Request) {
         const label = 'Certificate Holder';
         const labelW = font.widthOfTextAtSize(label, 10);
         page.drawText(label, {
-          x: frameX + (targetW - labelW) / 2,
+          x: frameX + (frameW - labelW) / 2,
           y: frameY - 20,
           size: 10,
           font,
@@ -357,12 +301,12 @@ export async function POST(req: Request) {
         });
       }
     } else {
-      // draw placeholder box for photo
+      // Draw placeholder box for photo
       const targetW = 180;
       const targetH = 180;
       const imgX = width - borderPadding - targetW - 50;
       const imgY = height - borderPadding - targetH - 130;
-      
+
       // Decorative frame
       page.drawRectangle({
         x: imgX - 6,
@@ -416,7 +360,7 @@ export async function POST(req: Request) {
       color: rgb(0.4, 0.2, 0.1),
     });
 
-    // finalize PDF
+    // Finalize PDF
     const pdfBytes = await pdfDoc.save();
 
     // Set filename (safe sanitized)
