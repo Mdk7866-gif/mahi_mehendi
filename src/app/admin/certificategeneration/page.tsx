@@ -167,7 +167,7 @@ export default function CertificateGeneration() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-amber-900 text-sm font-semibold mb-1">Learner&apos;s Full Name *</label>
+                <label className="block text-amber-900 text-sm font-semibold mb-1">Student&apos;s Name *</label>
                 <input
                   required
                   value={name}
