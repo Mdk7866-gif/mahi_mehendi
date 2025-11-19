@@ -58,7 +58,7 @@ export default function Admin(): React.ReactElement {
       try {
         const res = await fetch('/api/images', {
           signal: controller.signal,
-          cache: 'force-cache', // Use browser cache when available
+          cache: 'no-store',
         });
         if (!res.ok) throw new Error('Unable to load images');
         const data = await res.json();

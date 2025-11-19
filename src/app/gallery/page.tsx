@@ -56,7 +56,7 @@ export default function Gallery(): React.ReactElement {
     // Start fetch immediately without delay
     fetch('/api/images', { 
       signal: controller.signal,
-      cache: 'force-cache' // Use browser cache when available
+      cache: 'no-store'
     })
       .then((r) => r.json())
       .then((data) => {
