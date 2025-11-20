@@ -405,24 +405,6 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
                 </div>
               </div>
             </motion.div>
-
-            {/* Mobile Zoom Hint */}
-            {!isZoomed && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm"
-                >
-                  Pinch or scroll to zoom
-                </motion.div>
-              </motion.div>
-            )}
           </motion.div>
         </motion.div>
       )}
