@@ -117,8 +117,8 @@ export default function AboutPage(): React.ReactElement {
                   transition={{ duration: 0.5, delay: 0.1 }}
                   className="text-gray-700 text-sm sm:text-base leading-relaxed mb-4"
                 >
-                  With over 5 years of passion poured into every intricate design, Mahi blends ancient Mehendi traditions with contemporary flair. 
-                  From humble family gatherings to lavish weddings, her artistry has touched thousands of hands, creating memories that last a lifetime.
+                  With over 8 years of passion poured into every intricate design, Mahi blends ancient Mehendi traditions with contemporary flair. 
+                  From intimate family ceremonies to lavish weddings, her artistry has left countless happy clients and unforgettable memories.
                 </motion.p>
                 <motion.div 
                   initial={{ opacity: 0 }}
@@ -132,11 +132,11 @@ export default function AboutPage(): React.ReactElement {
                   </div>
                   <div className="flex items-center gap-1 text-xs bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
                     <Heart className="text-amber-600" size={12} />
-                    <span>5+ Years Experience</span>
+                    <span>8+ Years Experience</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
                     <Users className="text-amber-600" size={12} />
-                    <span>100+ Events</span>
+                    <span>1000+ Events</span>
                   </div>
                 </motion.div>
               </div>
