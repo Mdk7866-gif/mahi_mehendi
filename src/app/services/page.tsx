@@ -54,7 +54,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Bridal mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹6,999'
+    price: 'From ₹799'
   },
   {
     id: 'engagement',
@@ -67,7 +67,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Engagement mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹3,499'
+    price: 'From ₹399'
   },
   {
     id: 'babyshower',
@@ -80,7 +80,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Baby shower mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'Packages from ₹1,199'
+    price: 'Packages from ₹150'
   },
   {
     id: 'sider',
@@ -93,7 +93,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Sider mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹699'
+    price: 'From ₹150'
   }
 ];
 

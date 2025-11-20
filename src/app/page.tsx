@@ -94,7 +94,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Bridal mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹6,999'
+    price: 'From ₹799'
   },
   {
     id: 'engagement',
@@ -105,7 +105,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Engagement mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹3,499'
+    price: 'From ₹399'
   },
   {
     id: 'babyshower',
@@ -116,7 +116,7 @@ const DUMMY_SERVICES: Service[] = [
     alt: 'Baby shower mehendi',
     ctaText: 'Book Now',
     ctaLink: '/contact',
-    price: 'From ₹1,199'
+    price: 'From ₹150'
   }
 ];
 
@@ -256,13 +256,17 @@ export default function HomePage(): React.ReactElement {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image with Transition */}
-        <AnimatePresence mode="wait">
+         {/* Background Image with Smooth Transition */}
+         <AnimatePresence initial={false}>
           <motion.div
             key={currentBgIndex}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 1.5 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ 
+              duration: 2,
+              ease: "easeInOut"
+            }}
             className="absolute inset-0"
           >
             <Image
