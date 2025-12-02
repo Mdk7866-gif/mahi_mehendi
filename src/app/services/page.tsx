@@ -115,7 +115,7 @@ export default function ServicesPage(): React.ReactElement {
   const [services] = useState<Service[]>(() => DUMMY_SERVICES);
 
   // No artificial loading delay - show content immediately
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);

@@ -1,3 +1,4 @@
+// src/components/GalleryCardPopUp.tsx
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -7,7 +8,7 @@ import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 interface ImageType {
   _id: string;
   url: string;
-  category: 'bridal' | 'engagement' | 'babyshower' | 'sider';
+  category: 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth';
   price: number;
 }
 
@@ -246,7 +247,8 @@ export default function GalleryCardPopUp({ selectedImage, onClose }: GalleryCard
     bridal: 'Bridal',
     engagement: 'Engagement',
     babyshower: 'Baby Shower',
-    sider: 'Sider'
+    sider: 'Sider',
+    'karwa chauth': 'Karwa Chauth'
   };
 
   return (

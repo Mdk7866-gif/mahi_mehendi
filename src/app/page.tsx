@@ -125,7 +125,7 @@ export default function HomePage(): React.ReactElement {
   const [services] = useState<Service[]>(() => DUMMY_SERVICES);
 
   // No artificial loading delay - show content immediately
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading] = useState<boolean>(false);
 
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);

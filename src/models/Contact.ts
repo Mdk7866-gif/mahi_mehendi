@@ -8,6 +8,8 @@ export interface IContact extends Document {
   occasion: 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth' | string;
   preferredDate: string;
   message: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const ContactSchema: Schema = new Schema(
