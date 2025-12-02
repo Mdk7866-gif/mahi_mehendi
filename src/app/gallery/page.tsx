@@ -20,7 +20,7 @@ const categories = [
   { id: 'karwa chauth', label: 'Karwa Chauth', icon: '🌙' }
 ] as const;
 
-// keep animations subtle and fast
+// subtle, fast animations
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.03 } }
@@ -34,9 +34,7 @@ function getOptimizedImageUrl(url: string, width: number) {
   if (url.includes('cloudinary.com') && url.includes('/upload/')) {
     const prefix = url.split('/upload/')[0];
     const rest = url.split('/upload/')[1];
-    // Check if transformations already exist
     if (!/q_auto|f_auto|w_/.test(rest)) {
-      // Use smaller widths for thumbnails, auto quality, and WebP format
       return `${prefix}/upload/w_${width},q_auto:low,f_auto,dpr_auto/${rest}`;
     }
   }
@@ -51,14 +49,8 @@ export default function Gallery(): React.ReactElement {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Fetch images immediately - show content as soon as data arrives
     const controller = new AbortController();
-    
-    // Start fetch immediately
-    fetch('/api/images', { 
-      signal: controller.signal,
-      cache: 'default' // Allow browser caching
-    })
+    fetch('/api/images', { signal: controller.signal, cache: 'default' })
       .then((r) => r.json())
       .then((data) => {
         setImages(Array.isArray(data) ? data : []);
@@ -70,7 +62,6 @@ export default function Gallery(): React.ReactElement {
           setLoading(false);
         }
       });
-
     return () => controller.abort();
   }, []);
 
@@ -103,17 +94,44 @@ export default function Gallery(): React.ReactElement {
           <p className="mt-2 text-amber-700 text-sm sm:text-base max-w-2xl mx-auto">Explore our curated Mehendi designs across occasions.</p>
         </header>
 
-        {/* filters */}
-        <div className="flex justify-center gap-3 mb-6 flex-wrap">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-all ${selectedCategory === cat.id ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow' : 'bg-white/90 border border-amber-200 text-amber-800'}`}
-            >
-              {cat.icon} {cat.label}
-            </button>
-          ))}
+        {/* compact, horizontally scrollable filters for mobile */}
+        <div className="mb-6">
+          <div
+            role="tablist"
+            aria-label="Filter designs"
+            className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory px-2 py-1 -mx-2"
+          >
+            {categories.map(cat => {
+              const active = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={
+                    `snap-start inline-flex items-center gap-2 whitespace-nowrap rounded-full transition-all 
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400
+                     ${active
+                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md transform scale-100'
+                       : 'bg-white/90 border border-amber-200 text-amber-800'} 
+                     px-3 py-1.5 text-xs font-semibold`
+                  }
+                >
+                  <span className="text-sm leading-none" aria-hidden>{cat.icon}</span>
+                  <span className="hidden sm:inline">{cat.label}</span>
+                  <span className="sm:hidden sr-only">{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* optional: show currently selected for clarity on small screens */}
+          <div className="mt-2 text-center sm:hidden">
+            <span className="inline-block bg-white/90 border border-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full shadow-sm">
+              Showing: <strong className="ml-1 capitalize">{selectedCategory}</strong>
+            </span>
+          </div>
         </div>
 
         {/* grid: compact cards like Admin */}
@@ -131,7 +149,7 @@ export default function Gallery(): React.ReactElement {
               {filtered.map((img) => (
                 <motion.div key={img._id} variants={itemVariants} whileHover={{ scale: 1.02 }} className="group bg-white/95 rounded-2xl shadow-sm border border-amber-200 overflow-hidden cursor-pointer">
 
-                  {/* compact image height (like Admin) */}
+                  {/* compact image height */}
                   <div className="relative h-44 sm:h-40 bg-amber-50" onClick={() => setSelectedImage(img)}>
                     {!loaded[img._id] && (
                       <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100" />
