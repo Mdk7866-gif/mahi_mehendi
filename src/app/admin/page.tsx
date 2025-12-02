@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -49,7 +50,7 @@ export default function Admin(): React.ReactElement {
 
   // messages/progress
   const [message, setMessage] = useState('');
-  const [progressState, setProgressState] = useState<{ status: 'idle'|'loading'|'success'|'error'; text: string }>({ status: 'idle', text: '' });
+  const [progressState, setProgressState] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; text: string }>({ status: 'idle', text: '' });
   const [progressValue, setProgressValue] = useState(0);
 
   // ===== session verify =====
@@ -354,6 +355,16 @@ export default function Admin(): React.ReactElement {
             <span className="text-xs text-amber-800 font-medium">Admin Panel</span>
           </div>
           <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-amber-900">Manage Gallery</h1>
+
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/admin/certificategeneration"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-amber-200 rounded-xl text-amber-800 font-semibold shadow-sm hover:bg-amber-50 transition-colors"
+            >
+              <Sparkles size={16} className="text-amber-600" />
+              Issue Certificate
+            </Link>
+          </div>
         </motion.header>
 
         {/* UPLOAD FORM (compact grid) */}
