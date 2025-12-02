@@ -42,8 +42,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       if (isNaN(priceNum) || priceNum < 0) {
         return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
       }
-      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
-        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
+      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider' && category !== 'karwa chauth') {
+        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", "sider", or "karwa chauth"' }, { status: 400 });
       }
 
       let newUrl = existing.url;
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
       existing.url = newUrl;
       existing.publicId = newPublicId;
-      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider';
+      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth';
       existing.price = priceNum;
       await existing.save();
 
@@ -118,10 +118,10 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       if (isNaN(priceNum) || priceNum < 0) {
         return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
       }
-      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
-        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
+      if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider' && category !== 'karwa chauth') {
+        return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", "sider", or "karwa chauth"' }, { status: 400 });
       }
-      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider';
+      existing.category = category as 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth';
       existing.price = priceNum;
       await existing.save();
       return NextResponse.json({

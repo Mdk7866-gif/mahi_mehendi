@@ -94,6 +94,19 @@ const DUMMY_SERVICES: Service[] = [
     ctaText: 'Book Now',
     ctaLink: '/contact',
     price: 'From ₹150'
+  },
+  {
+    id: 'karwachauth',
+    title: 'Karwa Chauth Mehendi',
+    description:
+      'Traditional and elegant Karwa Chauth designs crafted to complement your festive look — focused on longevity and fine detail for the special fast.',
+    features: ['Traditional motifs', 'Delicate wrist & palm work', 'Quick touch-up friendly', 'Long-lasting stain'],
+    image:
+      'https://res.cloudinary.com/ddya4o2yl/image/upload/v1764643340/karwachauth_pchhtu.webp',
+    alt: 'Karwa Chauth mehendi',
+    ctaText: 'Book Now',
+    ctaLink: '/contact',
+    price: 'From ₹299'
   }
 ];
 

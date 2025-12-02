@@ -171,6 +171,7 @@ export default function Contact(): React.ReactElement {
                         <option value="engagement">Engagement</option>
                         <option value="babyshower">Baby Shower</option>
                         <option value="sider">Sider</option>
+                        <option value="karwa chauth">Karwa Chauth</option>
                       </select>
                     </div>
 

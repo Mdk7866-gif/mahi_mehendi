@@ -8,7 +8,7 @@ import GalleryCardPopUp from '@/components/GalleryCardPopUp';
 interface ImageType {
   _id: string;
   url: string;
-  category: 'bridal' | 'engagement' | 'babyshower' | 'sider';
+  category: 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth';
   price: number;
 }
 
@@ -16,7 +16,8 @@ const categories = [
   { id: 'bridal', label: 'Bridal', icon: '👰' },
   { id: 'engagement', label: 'Engagement', icon: '💍' },
   { id: 'babyshower', label: 'Baby Shower', icon: '🍼' },
-  { id: 'sider', label: 'Sider', icon: '✨' }
+  { id: 'sider', label: 'Sider', icon: '✨' },
+  { id: 'karwa chauth', label: 'Karwa Chauth', icon: '🌙' }
 ] as const;
 
 // keep animations subtle

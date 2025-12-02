@@ -5,7 +5,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IContact extends Document {
   name: string;
   emailOrPhone: string;
-  occasion: 'bridal' | 'engagement' | 'babyshower' | 'sider' | string;
+  occasion: 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth' | string;
   preferredDate: string;
   message: string;
 }
@@ -17,7 +17,7 @@ const ContactSchema: Schema = new Schema(
     occasion: {
       type: String,
       required: true,
-      enum: ['bridal', 'engagement', 'babyshower', 'sider'],
+      enum: ['bridal', 'engagement', 'babyshower', 'sider', 'karwa chauth'],
     },
     preferredDate: { type: String, required: true },
     message: { type: String, required: true },
@@ -28,4 +28,9 @@ const ContactSchema: Schema = new Schema(
   }
 );
 
-export default mongoose.models.Contact || mongoose.model<IContact>('Contact', ContactSchema);
+// Delete the cached model if it exists to ensure schema updates are applied
+if (mongoose.models.Contact) {
+  delete mongoose.models.Contact;
+}
+
+export default mongoose.model<IContact>('Contact', ContactSchema);

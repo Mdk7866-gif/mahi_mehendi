@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import GalleryCardPopUp from '@/components/GalleryCardPopUp';
 
-type Category = 'bridal' | 'engagement' | 'babyshower' | 'sider';
+type Category = 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth';
 
 interface ImageType { _id: string; url: string; category: Category; price: number }
 
@@ -366,6 +366,7 @@ export default function Admin(): React.ReactElement {
                 <option value="engagement">Engagement</option>
                 <option value="babyshower">Baby Shower</option>
                 <option value="sider">Sider</option>
+                <option value="karwa chauth">Karwa Chauth</option>
               </select>
             </div>
 
@@ -401,9 +402,9 @@ export default function Admin(): React.ReactElement {
 
         {/* CATEGORY FILTERS */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-center mb-5 flex-wrap">
-          {(['bridal', 'engagement', 'babyshower', 'sider'] as Category[]).map((cat) => (
+          {(['bridal', 'engagement', 'babyshower', 'sider', 'karwa chauth'] as Category[]).map((cat) => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-semibold ${selectedCategory === cat ? 'bg-linear-to-r from-amber-600 to-orange-600 text-white shadow' : 'bg-white/90 border border-amber-200 text-amber-800'}`}>
-              {cat[0].toUpperCase() + cat.slice(1)}
+              {cat.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
             </button>
           ))}
         </motion.div>
@@ -485,6 +486,7 @@ export default function Admin(): React.ReactElement {
                       <option value="engagement">Engagement</option>
                       <option value="babyshower">Baby Shower</option>
                       <option value="sider">Sider</option>
+                      <option value="karwa chauth">Karwa Chauth</option>
                     </select>
 
                     <label className="text-sm text-amber-800 font-semibold">Price (₹)</label>

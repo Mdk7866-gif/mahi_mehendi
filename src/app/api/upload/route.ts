@@ -44,8 +44,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Validate category
-    if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider') {
-      return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", or "sider"' }, { status: 400 });
+    if (category !== 'bridal' && category !== 'engagement' && category !== 'babyshower' && category !== 'sider' && category !== 'karwa chauth') {
+      return NextResponse.json({ error: 'Invalid category. Must be "bridal", "engagement", "babyshower", "sider", or "karwa chauth"' }, { status: 400 });
     }
 
     // Step 4: Convert file to buffer
@@ -110,7 +110,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     console.log('Saving image to MongoDB collection: gallery');
     const newImage = new Image({
       url: secureUrl,
-      category: category as 'bridal' | 'engagement' | 'babyshower' | 'sider',
+      category: category as 'bridal' | 'engagement' | 'babyshower' | 'sider' | 'karwa chauth',
       price: priceNum,
       publicId: publicId ?? undefined,
     });

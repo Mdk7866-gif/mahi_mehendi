@@ -19,6 +19,7 @@ const occasionEmojiMap: Record<string, string> = {
   engagement: '💞 Engagement',
   babyshower: '🤰 Baby Shower',
   sider: '🎉 Sider',
+  'karwa chauth': '🌙 Karwa Chauth',
 };
 
 export async function POST(request: Request) {
