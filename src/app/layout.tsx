@@ -4,8 +4,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import TopToBottom from "@/components/TopToBottom";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: 'swap', // Better font loading performance
   preload: true,
@@ -291,9 +292,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* JSON-LD structured data */}
         <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-/>
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
 
       <body className={`${inter.className} overflow-x-hidden`}>
@@ -302,6 +303,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Footer />
+        <TopToBottom />
       </body>
     </html>
   );
