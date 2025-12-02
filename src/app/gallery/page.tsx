@@ -20,14 +20,14 @@ const categories = [
   { id: 'karwa chauth', label: 'Karwa Chauth', icon: '🌙' }
 ] as const;
 
-// keep animations subtle
+// keep animations subtle and fast
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
+  visible: { opacity: 1, transition: { staggerChildren: 0.03 } }
 };
 const itemVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.32 } }
+  hidden: { opacity: 0, y: 8, scale: 0.99 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2 } }
 };
 
 function getOptimizedImageUrl(url: string, width: number) {
@@ -51,13 +51,13 @@ export default function Gallery(): React.ReactElement {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Prefetch images API for faster loading
+    // Fetch images immediately - show content as soon as data arrives
     const controller = new AbortController();
     
-    // Start fetch immediately without delay
+    // Start fetch immediately
     fetch('/api/images', { 
       signal: controller.signal,
-      cache: 'no-store'
+      cache: 'default' // Allow browser caching
     })
       .then((r) => r.json())
       .then((data) => {

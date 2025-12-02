@@ -105,9 +105,9 @@ export default function Contact(): React.ReactElement {
       <main className="min-h-screen mt-16 bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.header
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3 }}
             className="mb-8 text-center"
           >
             <div className="inline-flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-amber-200 rounded-full px-4 py-2 shadow-sm mx-auto">
@@ -121,7 +121,7 @@ export default function Contact(): React.ReactElement {
             </p>
           </motion.header>
 
-          <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.45 }}>
+          <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Left: Contact card (form) */}
               <div className="order-2 lg:order-1">

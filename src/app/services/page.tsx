@@ -28,15 +28,15 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1
+      staggerChildren: 0.05,
+      delayChildren: 0
     }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
 };
 
 /* --------------------------
@@ -114,8 +114,8 @@ export default function ServicesPage(): React.ReactElement {
   // Initialize services directly to avoid setting state synchronously inside an effect.
   const [services] = useState<Service[]>(() => DUMMY_SERVICES);
 
-  // Keep a short simulated loading to show spinner UX if desired
-  const [loading, setLoading] = useState(true);
+  // No artificial loading delay - show content immediately
+  const [loading, setLoading] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
@@ -130,12 +130,6 @@ export default function ServicesPage(): React.ReactElement {
   >(null);
   const isPanningRef = useRef(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
-
-  // Simulated small loading delay for polished UX — change or remove if not needed
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
-  }, []);
 
   // Image modal helpers
   const applyTransform = useCallback(() => {
@@ -351,9 +345,9 @@ export default function ServicesPage(): React.ReactElement {
         >
           {/* Header */}
           <motion.header
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.3 }}
             className="text-center mb-10 sm:mb-12"
           >
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-amber-300 rounded-full px-4 py-2 mb-4 shadow-sm">
@@ -361,9 +355,9 @@ export default function ServicesPage(): React.ReactElement {
               <span className="text-xs sm:text-sm text-amber-800 font-medium">Premium Mehendi Artistry</span>
             </div>
             <motion.h1
-              initial={{ scale: 0.95 }}
+              initial={{ scale: 0.98 }}
               animate={{ scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.3 }}
               className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-900 leading-tight mb-3"
             >
               Our Services
@@ -371,7 +365,7 @@ export default function ServicesPage(): React.ReactElement {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: 0.3 }}
               className="text-amber-700 text-sm sm:text-base max-w-2xl mx-auto"
             >
               Exquisite henna designs for every celebration — from intimate gatherings to grand weddings.
@@ -400,33 +394,33 @@ export default function ServicesPage(): React.ReactElement {
 
           {/* Course Section */}
           <motion.section
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.4 }}
             viewport={{ once: true }}
             aria-labelledby="course-heading"
           >
             <h2 id="course-heading" className="sr-only">Mehendi Mastery Course</h2>
 
-            <motion.div
-              initial={{ scale: 0.98 }}
-              whileInView={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-5 sm:p-6 lg:p-8"
-            >
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6"
+                initial={{ scale: 0.99 }}
+                whileInView={{ scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-5 sm:p-6 lg:p-8"
               >
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6"
+                >
                 <div className="flex-1">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 400, delay: 0.2 }}
-                    className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5 mb-3"
-                  >
+                    <motion.div
+                      initial={{ scale: 0.95 }}
+                      whileInView={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                      className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5 mb-3"
+                    >
                     <Award className="text-amber-600" size={16} />
                     <span className="text-xs text-amber-800 font-medium uppercase tracking-wider">Certified Course</span>
                   </motion.div>
@@ -485,12 +479,12 @@ export default function ServicesPage(): React.ReactElement {
                 ))}
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5"
-              >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5"
+                >
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="text-amber-600" size={16} />
                   <span className="text-sm sm:text-base font-semibold text-amber-800">Course Benefits</span>

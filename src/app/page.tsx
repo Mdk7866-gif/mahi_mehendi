@@ -11,18 +11,18 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
+      staggerChildren: 0.05,
+      delayChildren: 0
     }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 }
+    transition: { duration: 0.3 }
   }
 };
 
@@ -31,18 +31,18 @@ const heroVariants = {
   visible: {
     opacity: 1,
     transition: {
-      duration: 1,
-      staggerChildren: 0.3
+      duration: 0.6,
+      staggerChildren: 0.1
     }
   }
 };
 
 const heroChildVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.8 }
+    transition: { duration: 0.4 }
   }
 };
 
@@ -124,8 +124,8 @@ export default function HomePage(): React.ReactElement {
   // Initialize services directly to avoid setting state in an effect (fixes ESLint rule).
   const [services] = useState<Service[]>(() => DUMMY_SERVICES);
 
-  // Keep a short simulated loading to show spinner UX if desired
-  const [loading, setLoading] = useState<boolean>(true);
+  // No artificial loading delay - show content immediately
+  const [loading, setLoading] = useState<boolean>(false);
 
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -137,12 +137,6 @@ export default function HomePage(): React.ReactElement {
   const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const isPanningRef = useRef<boolean>(false);
   const lastMouseRef = useRef<{ x: number; y: number } | null>(null);
-
-  // Simulated small loading delay for polished UX — change or remove if not needed
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     const bgInterval = setInterval(() => {
@@ -264,7 +258,7 @@ export default function HomePage(): React.ReactElement {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ 
-              duration: 2,
+              duration: 1.5,
               ease: "easeInOut"
             }}
             className="absolute inset-0"
@@ -385,10 +379,10 @@ export default function HomePage(): React.ReactElement {
       <section className="py-16 sm:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.4 }}
             className="text-center mb-12 sm:mb-16"
           >
             <motion.div 
@@ -555,9 +549,10 @@ export default function HomePage(): React.ReactElement {
       <section className="py-16 sm:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
             className="text-center mb-12"
           >
             <div className="inline-flex items-center gap-2 bg-amber-100 border border-amber-200 rounded-full px-5 py-2.5 mb-4">
